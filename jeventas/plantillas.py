@@ -37,8 +37,10 @@ class CatalogoPlantillas:
             return False, "vencida"
         return True, "ok"
 
-    def recomendar(self, segmento: str, necesidad: str | None, plantillas_sin_respuesta: int, ahora: datetime) -> dict:
-        if segmento in SIN_PLANTILLA:
+    def recomendar(self, segmento: str, necesidad: str | None, plantillas_sin_respuesta: int, ahora: datetime,
+                   ids: list[str] | None = None) -> dict:
+        """ids: plantillas elegidas para la categoría (si se pasan, mandan sobre 'uso_previsto')."""
+        if ids is None and segmento in SIN_PLANTILLA:
             return {"plantilla": None, "motivo": f"No corresponde plantilla para el segmento '{segmento}'.", "revision_humana": segmento != "desistio"}
         if plantillas_sin_respuesta >= self.max_sin_respuesta:
             return {"plantilla": None, "motivo": f"Ya se enviaron {plantillas_sin_respuesta} plantillas sin respuesta: pausar el seguimiento.", "revision_humana": False}
@@ -53,6 +55,10 @@ class CatalogoPlantillas:
                 continue
             if numero not in uso.get("seguimiento_numero", [1, 2]):
                 continue
+            if ids is not None:
+                if p["id"] in ids:
+                    candidatas.append(((necesidad in uso["necesidades"]) * 2 - ids.index(p["id"]) / 100, p))
+                continue
             seg_ok = "*" in uso["segmentos"] or segmento in uso["segmentos"]
             nec_ok = "*" in uso["necesidades"] or (necesidad in uso["necesidades"])
             if not (seg_ok and nec_ok):
@@ -62,7 +68,9 @@ class CatalogoPlantillas:
             candidatas.append((especificidad, p))
 
         if not candidatas:
-            return {"plantilla": None, "motivo": "Ninguna plantilla aprobada y vigente encaja con este caso.", "revision_humana": True, "descartadas": descartes}
+            motivo = ("Ninguna de las plantillas elegidas para esta categoría está aprobada y vigente." if ids
+                      else "Ninguna plantilla aprobada y vigente encaja con este caso.")
+            return {"plantilla": None, "motivo": motivo, "revision_humana": True, "descartadas": descartes}
 
         candidatas.sort(key=lambda x: -x[0])
         elegida = candidatas[0][1]
@@ -76,7 +84,8 @@ class CatalogoPlantillas:
             },
             "alternativas": [p["id"] for _, p in candidatas[1:3]],
             "seguimiento_numero": numero,
-            "motivo": f"Encaja con segmento '{segmento}'" + (f" y necesidad '{necesidad}'" if necesidad else "") + f"; seguimiento n.º {numero}.",
+            "motivo": (f"Elegida para la categoría '{segmento}'" if ids else f"Encaja con segmento '{segmento}'")
+                      + (f" y necesidad '{necesidad}'" if necesidad else "") + f"; seguimiento n.º {numero}.",
             "simulada": elegida["estado"] != "aprobada",
             "revision_humana": False,
         }

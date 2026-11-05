@@ -14,6 +14,7 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ))
+from panel.acciones import ver_categorias  # noqa: E402
 from panel.servidor import cargar_corrida  # noqa: E402
 
 DESTINO = RAIZ / "panel" / "static" / "datos"
@@ -33,11 +34,13 @@ def main() -> None:
             sys.exit(f"'{nombre}' tiene conversaciones que no son sintéticas: no se exporta a la demo pública.")
         for r in d["recomendaciones"]:
             r.pop("clave", None)
-        salida = {"nombre": nombre, "meta": meta, "consultas": d["consultas"], "recomendaciones": d["recomendaciones"]}
+        salida = {"nombre": nombre, "meta": meta, "consultas": d["consultas"], "recomendaciones": d["recomendaciones"],
+                  "asignaciones": {}, "reasignaciones": []}
         (DESTINO / f"{nombre}.json").write_text(json.dumps(salida, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         indice.append({"nombre": nombre, "meta": meta, "revisadas": 0})
         print(f"{nombre}: {len(d['consultas'])} consultas, {len(d['recomendaciones'])} sugerencias")
     (DESTINO / "corridas.json").write_text(json.dumps(indice, ensure_ascii=False, indent=1), encoding="utf-8")
+    (DESTINO / "categorias.json").write_text(json.dumps(ver_categorias(), ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"-> {DESTINO}")
 
 

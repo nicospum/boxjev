@@ -15,7 +15,7 @@ import csv
 import hashlib
 import re
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from .jev import FECHA
@@ -126,38 +126,95 @@ def desde_csv(ruta_mensajes: str | Path, ruta_consultas: str | Path | None = Non
 
 
 # ---------------------------------------------------------------- WhatsApp .txt
-_WA_ANDROID = re.compile(r"^(\d{1,2}/\d{1,2}/\d{2,4}),? (\d{1,2}:\d{2})(?:\s?[ap]\.?\s?m\.?)? - ([^:]+): (.*)$", re.I)
-_WA_IOS = re.compile(r"^\[(\d{1,2}/\d{1,2}/\d{2,4}),? (\d{1,2}:\d{2}(?::\d{2})?)\] ([^:]+): (.*)$")
+_WA_ANDROID = re.compile(r"^(\d{1,2}/\d{1,2}/\d{2,4}),? (\d{1,2}:\d{2})\s?([ap]\.?\s?m\.?)? - ([^:]+): (.*)$", re.I)
+_WA_IOS = re.compile(r"^\[(\d{1,2}/\d{1,2}/\d{2,4}),? (\d{1,2}:\d{2})(?::\d{2})?\s?([ap]\.?\s?m\.?)?\] ([^:]+): (.*)$", re.I)
+_INVISIBLES = dict.fromkeys(map(ord, "‎‏‪‬"), None) | {0x202F: " ", 0xA0: " "}
 
 
-def desde_whatsapp_txt(ruta: str | Path, nombres_ventas: list[str], sal: str = "donbox", anonimizar: bool = True) -> Consulta:
-    """nombres_ventas: cómo aparece el equipo de Don Box en el chat (p. ej. 'Don Box Ventas')."""
+def _ts(fecha: str, hora: str, ampm: str | None) -> datetime:
+    d, mes, a = fecha.split("/")
+    a = int(a) + (2000 if len(a) == 2 else 0)
+    hh, mm = (int(x) for x in hora.split(":")[:2])
+    if ampm:
+        pm = ampm.lower().startswith("p")
+        hh = (hh % 12) + (12 if pm else 0)
+    return datetime(a, int(mes), int(d), hh, mm)
+
+
+def _parsear_whatsapp(texto: str, nombres_ventas: list[str]) -> tuple[list[Mensaje], set[str]]:
     mensajes: list[Mensaje] = []
     nombres_cliente: set[str] = set()
-    for linea in Path(ruta).read_text(encoding="utf-8").splitlines():
-        linea = linea.replace("‎", "").replace(" ", " ")
+    ventas = {n.strip().lower() for n in nombres_ventas}
+    for linea in texto.splitlines():
+        linea = linea.translate(_INVISIBLES)
         m = _WA_IOS.match(linea) or _WA_ANDROID.match(linea)
         if not m:
             if mensajes and linea.strip():  # continuación del mensaje anterior
                 mensajes[-1].texto += "\n" + linea
             continue
-        fecha, hora, quien, texto = m.groups()
-        d, mes, a = fecha.split("/")
-        a = int(a) + (2000 if len(a) == 2 else 0)
-        hh, mm = hora.split(":")[:2]
-        ts = datetime(a, int(mes), int(d), int(hh), int(mm))
-        autor = "ventas" if quien.strip() in nombres_ventas else "cliente"
+        fecha, hora, ampm, quien, cuerpo = m.groups()
+        autor = "ventas" if quien.strip().lower() in ventas else "cliente"
         if autor == "cliente":
             nombres_cliente.add(quien.strip())
         tipo = "texto"
-        if "<Multimedia omitido>" in texto or "omitted" in texto or "omitido" in texto:
-            tipo, texto = "imagen", ""
-        mensajes.append(Mensaje(ts=ts, autor=autor, texto=texto, tipo=tipo))
+        if "<Multimedia omitido>" in cuerpo or "omitted" in cuerpo or "omitido" in cuerpo:
+            tipo, cuerpo = "imagen", ""
+        mensajes.append(Mensaje(ts=_ts(fecha, hora, ampm), autor=autor, texto=cuerpo, tipo=tipo))
+    return mensajes, nombres_cliente
+
+
+def _anonimizar_mensajes(mensajes: list[Mensaje], nombres_cliente: set[str]) -> None:
+    partes = [p for n in nombres_cliente for p in n.split()]
+    for msg in mensajes:
+        msg.texto = anonimizar_texto(msg.texto, partes)
+
+
+def desde_whatsapp_txt(ruta: str | Path, nombres_ventas: list[str], sal: str = "donbox", anonimizar: bool = True) -> Consulta:
+    """nombres_ventas: cómo aparece el equipo de Don Box en el chat (p. ej. 'Don Box Ventas')."""
+    mensajes, nombres_cliente = _parsear_whatsapp(Path(ruta).read_text(encoding="utf-8"), nombres_ventas)
     if not mensajes:
         raise ValueError(f"No se reconocieron mensajes en {ruta}")
     if anonimizar:
-        partes = [p for n in nombres_cliente for p in n.split()]
-        for msg in mensajes:
-            msg.texto = anonimizar_texto(msg.texto, partes)
+        _anonimizar_mensajes(mensajes, nombres_cliente)
     ident = Path(ruta).stem
     return Consulta(id_consulta=codigo_anonimo(ident, sal) if anonimizar else ident, mensajes=mensajes)
+
+
+# ---------------------------------------------------------------- texto pegado
+_LINEA_SIMPLE = re.compile(r"^\s*(?:\[?(\d{1,2}/\d{1,2}(?:/\d{2,4})?)?,?\s*(\d{1,2}:\d{2})?\]?\s*-?\s*)?"
+                           r"(cliente|prospecto|ventas|don ?box|vendedor|asesor)\s*:\s*(.*)$", re.I)
+
+
+def desde_texto(texto: str, nombres_ventas: list[str] | None = None, ultimo_hace_horas: float = 0.0,
+                ahora: datetime | None = None, ident: str = "", sal: str = "donbox",
+                nombres_a_borrar: list[str] | None = None) -> Consulta:
+    """Una conversación pegada a mano. Acepta:
+    - líneas copiadas de un chat exportado de WhatsApp;
+    - formato simple: 'Cliente: ...' / 'Ventas: ...' (con hora opcional, '10:30 Cliente: ...').
+    Si no hay fechas, los mensajes se ubican cada 5 minutos y el último queda
+    'ultimo_hace_horas' horas antes de ahora. Siempre anonimiza."""
+    ahora = ahora or datetime.now()
+    mensajes, nombres_cliente = _parsear_whatsapp(texto, nombres_ventas or ["Don Box", "Don Box Ventas"])
+    if not mensajes:
+        crudos: list[tuple[str, str, str | None]] = []
+        for linea in texto.translate(_INVISIBLES).splitlines():
+            if not linea.strip():
+                continue
+            m = _LINEA_SIMPLE.match(linea)
+            if m:
+                _, hora, quien, cuerpo = m.groups()
+                autor = "cliente" if quien.lower() in ("cliente", "prospecto") else "ventas"
+                crudos.append((autor, cuerpo, hora))
+            elif crudos:
+                crudos[-1] = (crudos[-1][0], crudos[-1][1] + "\n" + linea, crudos[-1][2])
+            else:  # sin prefijo: es el primer mensaje del cliente
+                crudos.append(("cliente", linea.strip(), None))
+        fin = ahora - timedelta(hours=ultimo_hace_horas)
+        n = len(crudos)
+        for i, (autor, cuerpo, _hora) in enumerate(crudos):
+            mensajes.append(Mensaje(ts=fin - timedelta(minutes=5 * (n - 1 - i)), autor=autor, texto=cuerpo.strip()))
+    if not mensajes:
+        raise ValueError("No se encontró ningún mensaje en el texto pegado.")
+    _anonimizar_mensajes(mensajes, nombres_cliente | {n for n in (nombres_a_borrar or []) if n.strip()})
+    base = ident or f"pegado-{ahora.isoformat()}-{texto[:40]}"
+    return Consulta(id_consulta=codigo_anonimo(base, sal), mensajes=mensajes)

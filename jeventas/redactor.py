@@ -85,17 +85,15 @@ Reglas:
 Devolvé solo el texto del mensaje."""
 
 
-class RedactorClaude:
-    nombre = "claude"
+class RedactorIA:
+    """Borrador con un modelo generativo (Claude, OpenAI, DeepSeek o Gemini; ver proveedores.py)."""
 
-    def __init__(self, info: dict, envio_externo_aprobado: bool, modelo: str = MODELO_CLAUDE) -> None:
-        if not envio_externo_aprobado:
-            raise RuntimeError("Envío a Anthropic no habilitado: requiere aprobación de Don Box (--envio-externo-aprobado).")
-        import anthropic  # import diferido: solo hace falta en este modo
+    def __init__(self, info: dict, proveedor: str, envio_externo_aprobado: bool | None = None) -> None:
+        from . import proveedores
 
-        self.cliente = anthropic.Anthropic()
+        self.ia = proveedores.crear(proveedor, envio_externo_aprobado)
         self.info = info
-        self.modelo = modelo
+        self.nombre = proveedor
 
     def redactar(self, conversacion: list[dict], clasif: dict) -> dict:
         if detectar_pii(conversacion):
@@ -103,25 +101,23 @@ class RedactorClaude:
         info = dict(self.info)
         if clasif.get("sede") in info["sedes"]:
             info["sedes"] = {clasif["sede"]: info["sedes"][clasif["sede"]]}
+        cat = clasif.get("categoria") or {}
+        contexto = {k: clasif.get(k) for k in ("necesidad", "sede", "datos_faltantes", "alertas")}
+        contexto["categoria"] = {"nombre": cat.get("nombre"), "descripcion": cat.get("descripcion")}
         usuario = (
             f"<info_comercial>\n{json.dumps(info, ensure_ascii=False, indent=1)}\n</info_comercial>\n"
-            f"<clasificacion>\n{json.dumps({k: clasif[k] for k in ('segmento', 'descripcion_segmento', 'necesidad', 'sede', 'datos_faltantes', 'alertas')}, ensure_ascii=False)}\n</clasificacion>\n"
+            f"<clasificacion>\n{json.dumps(contexto, ensure_ascii=False)}\n</clasificacion>\n"
             f"<conversacion>\n{json.dumps(conversacion, ensure_ascii=False, indent=1)}\n</conversacion>\n"
             "Redactá el próximo mensaje de Ventas."
         )
-        # output_config / fallbacks via extra_body: compatibles con versiones viejas del SDK.
-        resp = self.cliente.messages.create(
-            model=self.modelo,
-            max_tokens=2000,
-            system=_SISTEMA,
-            messages=[{"role": "user", "content": usuario}],
-            extra_headers={"anthropic-beta": "server-side-fallback-2026-07-01"},
-            extra_body={"output_config": {"effort": "low"}, "fallbacks": "default"},
-        )
-        if resp.stop_reason == "refusal":
-            return {"texto": "", "modelo": self.modelo, "riesgos": ["el modelo no generó borrador"]}
-        texto = "".join(b.text for b in resp.content if b.type == "text").strip()
-        return {"texto": texto, "modelo": resp.model, "riesgos": verificar_borrador(texto)}
+        texto = self.ia.generar(_SISTEMA, usuario)
+        if not texto:
+            return {"texto": "", "modelo": self.ia.modelo, "riesgos": ["el modelo no generó borrador"]}
+        return {"texto": texto, "modelo": self.ia.modelo, "riesgos": verificar_borrador(texto)}
+
+
+def RedactorClaude(info: dict, envio_externo_aprobado: bool) -> RedactorIA:  # noqa: N802 (compatibilidad CLI)
+    return RedactorIA(info, "anthropic", envio_externo_aprobado)
 
 
 def cargar_info(ruta: str | Path) -> dict:
