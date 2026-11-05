@@ -1,0 +1,32 @@
+[
+ {
+  "nombre": "jev_real_20",
+  "meta": {
+   "entrada": "data/sinteticas/consultas_500.jsonl",
+   "jev": "jev-1.14.0",
+   "redactor": "offline",
+   "plantillas_simuladas": true,
+   "consultas": 20,
+   "sinteticas": 20,
+   "recomendaciones": 46,
+   "errores": 0,
+   "fecha": "2026-11-05T12:10:00"
+  },
+  "revisadas": 0
+ },
+ {
+  "nombre": "demo",
+  "meta": {
+   "entrada": "data/sinteticas/consultas_500.jsonl",
+   "jev": "simulado",
+   "redactor": "offline",
+   "plantillas_simuladas": true,
+   "consultas": 500,
+   "sinteticas": 500,
+   "recomendaciones": 1094,
+   "errores": 0,
+   "fecha": "2026-11-05T12:01:00"
+  },
+  "revisadas": 0
+ }
+]

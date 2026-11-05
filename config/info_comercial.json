@@ -1,0 +1,30 @@
+{
+  "_descripcion": "Información comercial que el redactor puede usar en borradores. Precargada desde Don_Box_FAQs_Revision.md (revisión 2026-10-01). NO está validada por Don Box: antes del uso real, Ventas debe confirmar cada dato y completar 'validado_por' y 'vigente_hasta'.",
+  "validado_por": null,
+  "vigente_hasta": null,
+  "reglas_de_redaccion": [
+    "No informar precios ni promociones: pedir los datos para cotizar.",
+    "No prometer disponibilidad de una unidad ni de una fecha.",
+    "Una consulta o cotización no es una reserva confirmada.",
+    "Pedir como máximo dos datos por mensaje.",
+    "Tono cordial, rioplatense (voseo), breve, apto para WhatsApp."
+  ],
+  "atencion_comercial": "Lunes a viernes de 9 a 21 y sábados de 9 a 14.",
+  "acceso_clientes_general": "En las sedes que lo publican: lunes a viernes de 9 a 18 y sábados de 9 a 14. Confirmar antes de ir en feriados.",
+  "datos_para_cotizar": [
+    "sucursal o zona",
+    "qué querés guardar (o medidas aproximadas)",
+    "desde cuándo lo necesitás"
+  ],
+  "sedes": {
+    "nunez": {"nombre": "Núñez", "direccion": "11 de Septiembre 3468, CABA", "tamanos": "1 a 9 m²", "acceso": "Lun a vie 9-18, sáb 9-14"},
+    "palermo": {"nombre": "Palermo", "direccion": "José A. Cabrera 3965, CABA", "tamanos": "1 a 9 m²", "acceso": "Lun a vie 9-18, sáb 9-14"},
+    "saavedra": {"nombre": "Saavedra", "direccion": "Díaz Colodrero 3564, CABA", "tamanos": "1 a 9 m²", "acceso": "Lun a vie 9-18, sáb 9-14"},
+    "villa_urquiza": {"nombre": "Villa Urquiza", "direccion": "Quesada 6056, CABA", "tamanos": "1 a 9 m²", "acceso": "Lun a vie 9-18, sáb 9-14"},
+    "agronomia": {"nombre": "Agronomía", "direccion": "Bucarelli 1327, CABA", "tamanos": "consultar", "acceso": "confirmar con la sede"},
+    "almagro": {"nombre": "Almagro", "direccion": "Catamarca 563, CABA", "tamanos": "distintos tamaños, consultar", "acceso": "confirmar con la sede"},
+    "tigre": {"nombre": "Tigre", "direccion": "Austria Norte 1521, Parque Industrial Tigre", "tamanos": "consultar formatos grandes", "acceso": "Lun a vie 9-18, sáb 9-14"},
+    "quilmes_bernal": {"nombre": "Quilmes / Bernal", "direccion": "Tomás Espora 100, Parque Industrial de Bernal (número a confirmar)", "tamanos": "consultar", "acceso": "Lun a vie 9-18, sáb 9-14"},
+    "cordoba": {"nombre": "Córdoba", "direccion": "Colectora Externa 3260, Plataforma Norte, Nave 2, Córdoba Capital", "tamanos": "comparador en la web", "acceso": "Lun a vie 9-18, sáb 9-14"}
+  }
+}

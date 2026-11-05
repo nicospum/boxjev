@@ -1,0 +1,17 @@
+# Demo estática del panel (solo datos inventados). Sin paso de build.
+# Para actualizarla: python scripts/exportar_demo.py <lotes...> y volver a subir.
+[build]
+  publish = "panel/static"
+  command = ""
+
+[[headers]]
+  for = "/datos/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300"
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+    X-Content-Type-Options = "nosniff"

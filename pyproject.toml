@@ -1,0 +1,14 @@
+[project]
+name = "jeventas"
+version = "0.1.0"
+description = "Asistente interno de Ventas de Don Box: Jev clasifica, el código decide, una persona envía."
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+claude = ["anthropic"]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

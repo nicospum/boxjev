@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JeVentas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="barra">
+  <div class="marca">
+    <span class="marca-logo" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="marca-nombre">JeVentas</span>
+  </div>
+  <nav class="pestanas" aria-label="Secciones">
+    <button class="pestana activa" data-vista="consultas">Consultas</button>
+    <button class="pestana" data-vista="resumen">Resumen</button>
+    <button class="pestana" data-vista="importar">Importar</button>
+  </nav>
+  <label class="corrida">
+    <span class="corrida-rotulo">Lote</span>
+    <select id="selCorrida" aria-label="Lote de conversaciones"></select>
+  </label>
+</header>
+<div id="aviso" class="aviso" hidden></div>
+
+<main>
+  <!-- CONSULTAS -->
+  <section id="vista-consultas" class="vista vista-consultas">
+    <aside class="lista">
+      <div class="lista-filtros">
+        <input id="buscar" type="search" placeholder="Buscar en los mensajes" aria-label="Buscar">
+        <div id="filtrosSeg" class="filtros-seg" role="group" aria-label="Filtrar por tipo"></div>
+        <label class="solo-pendientes"><input type="checkbox" id="soloPendientes"> Solo sin revisar</label>
+      </div>
+      <div id="contador" class="lista-contador"></div>
+      <ol id="items" class="items"></ol>
+    </aside>
+
+    <section class="chat" aria-label="Conversación">
+      <div id="chatCab" class="chat-cab"></div>
+      <div id="chatCuerpo" class="chat-cuerpo"></div>
+    </section>
+
+    <aside id="lectura" class="lectura" aria-label="Lectura del sistema"></aside>
+  </section>
+
+  <!-- RESUMEN -->
+  <section id="vista-resumen" class="vista vista-resumen" hidden></section>
+
+  <!-- IMPORTAR -->
+  <section id="vista-importar" class="vista vista-importar" hidden>
+    <div class="importar">
+      <h1>Importar conversaciones</h1>
+      <p class="bajada">Subí lo que exportaron de Atom, HubSpot o WhatsApp. El sistema borra teléfonos, emails y nombres, analiza cada conversación y crea un lote nuevo para revisar. No envía ningún mensaje.</p>
+
+      <label id="zona" class="zona" tabindex="0">
+        <input id="archivos" type="file" multiple accept=".csv,.txt,.jsonl" hidden>
+        <span class="zona-titulo">Arrastrá los archivos acá o hacé clic para elegirlos</span>
+        <span class="zona-ayuda">Chats de WhatsApp exportados (.txt), o un CSV con una fila por mensaje. Para cargar el resultado conocido, sumá un CSV con las columnas <b>archivo</b> (o <b>id_consulta</b>) y <b>resultado</b>: alquiló, no alquiló o desconocido.</span>
+        <ul id="zonaLista" class="zona-lista"></ul>
+      </label>
+
+      <div class="campos">
+        <label class="campo">
+          <span>Cómo aparece Don Box en los chats de WhatsApp</span>
+          <input id="nombresVentas" type="text" placeholder="Don Box, Don Box Ventas">
+          <small>Solo hace falta para archivos .txt. Si son varios nombres, separalos con comas.</small>
+        </label>
+        <label class="campo">
+          <span>Nombre del lote</span>
+          <input id="etiquetaLote" type="text" placeholder="consultas_octubre">
+        </label>
+      </div>
+
+      <fieldset class="opciones">
+        <legend>Con qué analizar</legend>
+        <label class="opcion"><input type="radio" name="jev" value="simulado" checked>
+          <span><b>Jev simulado.</b> No sale nada de esta computadora. Sirve para probar el circuito, no para medir.</span></label>
+        <label class="opcion"><input type="radio" name="jev" value="api">
+          <span><b>Jev real.</b> Envía las conversaciones, ya anonimizadas, a TypeSafe.</span></label>
+        <label id="aprobadoFila" class="opcion sub" hidden><input type="checkbox" id="aprobado">
+          <span>Don Box aprobó compartir estas conversaciones con TypeSafe.</span></label>
+        <label class="opcion"><input type="checkbox" id="simularPlantillas">
+          <span>Probar con las plantillas de ejemplo (todavía no hay plantillas aprobadas cargadas).</span></label>
+      </fieldset>
+
+      <div class="importar-accion">
+        <button id="btnImportar" class="boton primario" disabled>Importar y analizar</button>
+        <span id="importarEstado" class="importar-estado" role="status"></span>
+      </div>
+    </div>
+  </section>
+</main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+{
+  "_descripcion": "Catálogo de plantillas de WhatsApp. Las de este archivo son EJEMPLOS para armar el piloto: ninguna está aprobada. Reemplazar por el listado real (nombre en Meta, texto, estado y vigencia). El sistema solo recomienda plantillas con estado 'aprobada' y vigentes, salvo que se corra con --simular-plantillas (modo laboratorio, marcado en la salida).",
+  "max_plantillas_sin_respuesta": 2,
+  "plantillas": [
+    {
+      "id": "seguimiento_cotizacion_v1",
+      "nombre_meta": "seguimiento_cotizacion",
+      "estado": "ejemplo",
+      "vigente_desde": "2026-01-01",
+      "vigente_hasta": null,
+      "texto": "Hola {{1}}, te escribimos de Don Box por tu consulta de baulera en {{2}}. Si querés, con lo que vas a guardar y desde cuándo lo necesitás te preparamos la cotización. ¿Seguimos?",
+      "variables": ["nombre o 'qué tal'", "sede o zona"],
+      "uso_previsto": {"segmentos": ["alta_intencion", "lista_para_cotizar"], "necesidades": ["*"], "seguimiento_numero": [1]}
+    },
+    {
+      "id": "seguimiento_mudanza_v1",
+      "nombre_meta": "seguimiento_mudanza",
+      "estado": "ejemplo",
+      "vigente_desde": "2026-01-01",
+      "vigente_hasta": null,
+      "texto": "Hola {{1}}, ¿cómo va la mudanza? Si todavía necesitás guardar cosas, en Don Box te ayudamos a calcular el tamaño de baulera. Respondé este mensaje y lo vemos.",
+      "variables": ["nombre o 'qué tal'"],
+      "uso_previsto": {"segmentos": ["alta_intencion", "lista_para_cotizar", "exploratoria"], "necesidades": ["mudanza", "reforma"], "seguimiento_numero": [1, 2]}
+    },
+    {
+      "id": "seguimiento_empresa_v1",
+      "nombre_meta": "seguimiento_empresas",
+      "estado": "ejemplo",
+      "vigente_desde": "2026-01-01",
+      "vigente_hasta": null,
+      "texto": "Hola {{1}}, te escribimos de Don Box por tu consulta para guardar mercadería o equipos. Si nos contás volumen aproximado y frecuencia de retiro, te proponemos opciones. ¿Te sirve?",
+      "variables": ["nombre o 'qué tal'"],
+      "uso_previsto": {"segmentos": ["alta_intencion", "lista_para_cotizar", "exploratoria"], "necesidades": ["stock_empresa"], "seguimiento_numero": [1, 2]}
+    },
+    {
+      "id": "pedido_datos_v1",
+      "nombre_meta": "consulta_datos_baulera",
+      "estado": "ejemplo",
+      "vigente_desde": "2026-01-01",
+      "vigente_hasta": null,
+      "texto": "Hola {{1}}, gracias por escribir a Don Box. Para ayudarte con la baulera, ¿en qué zona la buscás y qué te gustaría guardar?",
+      "variables": ["nombre o 'qué tal'"],
+      "uso_previsto": {"segmentos": ["informacion_insuficiente", "exploratoria"], "necesidades": ["*"], "seguimiento_numero": [1]}
+    },
+    {
+      "id": "reenganche_suave_v1",
+      "nombre_meta": "reenganche_suave",
+      "estado": "ejemplo",
+      "vigente_desde": "2026-01-01",
+      "vigente_hasta": null,
+      "texto": "Hola {{1}}, quedamos a disposición por tu consulta de baulera. Si más adelante lo necesitás, respondé este mensaje y te ayudamos.",
+      "variables": ["nombre o 'qué tal'"],
+      "uso_previsto": {"segmentos": ["*"], "necesidades": ["*"], "seguimiento_numero": [2]}
+    },
+    {
+      "id": "retomar_mas_adelante_v1",
+      "nombre_meta": "retomar_consulta",
+      "estado": "ejemplo",
+      "vigente_desde": "2026-01-01",
+      "vigente_hasta": null,
+      "texto": "Hola {{1}}, nos habías pedido que te escribiéramos más adelante por la baulera. ¿Querés que retomemos la consulta?",
+      "variables": ["nombre o 'qué tal'"],
+      "uso_previsto": {"segmentos": ["pidio_tiempo"], "necesidades": ["*"], "seguimiento_numero": [1, 2]}
+    },
+    {
+      "id": "promo_vieja_2025",
+      "nombre_meta": "promo_invierno_2025",
+      "estado": "aprobada",
+      "vigente_desde": "2025-05-01",
+      "vigente_hasta": "2025-08-31",
+      "texto": "Plantilla vencida, se deja para probar que el sistema no recomienda plantillas fuera de vigencia.",
+      "variables": [],
+      "uso_previsto": {"segmentos": ["*"], "necesidades": ["*"], "seguimiento_numero": [1, 2]}
+    }
+  ]
+}
