@@ -10,12 +10,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 
+from . import ajustes
+from .categorias import Categorias
 from .evaluacion import informe_md, metricas
 from .jev import JevAPI, JevError, JevSimulado
 from .modelo import Consulta, escribir_jsonl
 from .pipeline import evaluar, puntos_de_decision
 from .plantillas import CatalogoPlantillas
-from .redactor import RedactorClaude, RedactorOffline, cargar_info
+from .proveedores import ErrorProveedor
+from .redactor import RedactorIA, RedactorOffline, cargar_info
 
 RAIZ = Path(__file__).resolve().parents[1]
 
@@ -27,14 +30,22 @@ COLUMNAS_REVISION = [
 
 
 def herramientas(jev: str = "simulado", redactor: str = "offline", envio_externo_aprobado: bool = False, simular_plantillas: bool = False):
-    j = JevAPI(envio_externo_aprobado) if jev == "api" else JevSimulado()
+    """redactor: 'offline', 'claude' (= anthropic), o un proveedor de ajustes.PROVEEDORES."""
+    j = JevAPI(envio_externo_aprobado, api_key=ajustes.clave("typesafe")) if jev == "api" else JevSimulado()
     info = cargar_info(RAIZ / "config" / "info_comercial.json")
-    r = RedactorClaude(info, envio_externo_aprobado) if redactor == "claude" else RedactorOffline(info)
+    prov = "anthropic" if redactor == "claude" else redactor
+    r = RedactorOffline(info) if prov == "offline" else RedactorIA(info, prov, envio_externo_aprobado)
     c = CatalogoPlantillas(RAIZ / "config" / "plantillas.json", simular=simular_plantillas)
     return j, r, c
 
 
-def correr(consultas: Iterable[Consulta], salida: Path, jev, redactor, catalogo: CatalogoPlantillas, entrada: str = "") -> dict:
+def categorias() -> Categorias:
+    return Categorias(RAIZ / "config" / "categorias.json")
+
+
+def correr(consultas: Iterable[Consulta], salida: Path, jev, redactor, catalogo: CatalogoPlantillas, entrada: str = "",
+           cats: Categorias | None = None) -> dict:
+    cats = cats or categorias()
     salida = Path(salida)
     (salida / "payloads").mkdir(parents=True, exist_ok=True)
     consultas = list(consultas)
@@ -43,8 +54,8 @@ def correr(consultas: Iterable[Consulta], salida: Path, jev, redactor, catalogo:
     for c in consultas:
         for ts, motivo in puntos_de_decision(c):
             try:
-                r = evaluar(c, ts, motivo, jev, redactor, catalogo)
-            except JevError as e:  # un error es un error: no se convierte en respuesta
+                r = evaluar(c, ts, motivo, jev, redactor, catalogo, cats)
+            except (JevError, ErrorProveedor) as e:  # un error es un error: no se convierte en respuesta
                 errores.append({"id_consulta": c.id_consulta, "punto": motivo, "error": str(e)})
                 continue
             payload = r.pop("_payload")

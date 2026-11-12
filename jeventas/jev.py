@@ -59,13 +59,10 @@ class JevAPI:
         reintentos: int = 3,
     ) -> None:
         if not envio_externo_aprobado:
-            raise JevError(
-                "Envío a TypeSafe no habilitado. Requiere aprobación de Don Box para "
-                "compartir conversaciones (usar --envio-externo-aprobado)."
-            )
+            raise JevError("falta la aprobación de Don Box para enviar conversaciones a TypeSafe.")
         self.api_key = api_key or os.environ.get("TYPESAFE_API_KEY")
         if not self.api_key:
-            raise JevError("Falta TYPESAFE_API_KEY en el entorno.")
+            raise JevError("falta la clave de TypeSafe (TYPESAFE_API_KEY).")
         self.modelo = modelo
         self.timeout = timeout
         self.reintentos = reintentos
@@ -213,6 +210,44 @@ class JevSimulado:
             elif nombre == "pregunta_sin_responder":
                 ult = conv[-1] if conv else {}
                 r[nombre] = {"type": "noul", "noul": _p(ult.get("de") == "Prospecto" and "?" in ult.get("texto", ""))}
+            elif nombre == "categoria":
+                r[nombre] = self._categoria(q["criteria"], conv, cli, ult_cli, form, hay)
+            elif nombre == "categoria_encaja":
+                r[nombre] = {"type": "noul", "noul": 0.85}
             else:
                 r[nombre] = {"type": q["type"], "noul": 0.5}
         return {"modelo": "simulado", "respuestas": r, "uso": None}
+
+    @staticmethod
+    def _categoria(opciones: dict, conv: list, cli: str, ult_cli: str, form: str, hay) -> dict:
+        """Elige categoría: primero reglas para las categorías de la propuesta inicial,
+        después coincidencia de palabras entre la descripción y la conversación."""
+        de = [m["de"] for m in conv]
+        i_ventas = de.index("Ventas Don Box") if "Ventas Don Box" in de else None
+        respondio = i_ventas is not None and "Prospecto" in de[i_ventas + 1:]
+        hubo_plantilla = any(m["texto"].startswith("[Plantilla") for m in conv)
+        ubic = hay(sum(_SEDE_KW.values(), [])) or "zona" in form
+        pronto = hay(_URGENTE + _PRONTO, cli)
+        datos = sum([ubic, hay(_ITEMS), hay(_CUANDO, cli), any(hay(k) for k in _KW.values())])
+        candidatos = [
+            ("no_es_prospecto", hay(["cv", "curriculum", "busqueda laboral", "ofrecemos", "proveedor", "soy cliente", "factura", "mi contrato", "ganaste", "inverti"], cli)),
+            ("desistio", hay(["ya consegui", "ya lo resolvi", "no necesito", "otro lugar", "ya no"], ult_cli)),
+            ("quiere_reservar", hay(["reservar", "reservo", "lo tomo", "como pago", "lo quiero", "dale avancemos"], ult_cli)),
+            ("objecion_precio", hay(["caro", "presupuesto", "descuento", "se me va"], ult_cli)),
+            ("pidio_tiempo", hay(["lo pienso", "te aviso", "les aviso", "mas adelante", "lo charlo"], ult_cli)),
+            ("volvio_interesado", hubo_plantilla and conv and conv[-1]["de"] == "Prospecto"),
+            ("nunca_respondio", i_ventas is not None and not respondio),
+            ("se_enfrio", respondio),
+            ("empresa", hay(_KW["stock_empresa"] + _KW["documentos_archivo"])),
+            ("alta_intencion", ubic and pronto),
+            ("lista_para_cotizar", ubic and datos >= 2),
+            ("exploratoria", datos >= 1 or hay(["precio", "cuanto sale", "valor"], cli)),
+            ("informacion_insuficiente", True),
+        ]
+        ganador = next((cid for cid, ok in candidatos if ok and cid in opciones), None)
+        if ganador is None:  # categorías nuevas: coincidencia de palabras
+            texto = _norm(" ".join(m["texto"] for m in conv))
+            def puntaje(desc: str) -> int:
+                return sum(1 for w in set(re.findall(r"[a-z]{5,}", _norm(desc))) if w in texto)
+            ganador = max(opciones, key=lambda k: puntaje(opciones[k]))
+        return _choice(list(opciones), ganador, 0.72)

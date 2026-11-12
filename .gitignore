@@ -4,3 +4,6 @@ out/
 data/reales/
 export/
 .env
+config/*.local.json
+config/*.tmp
+.netlify/

@@ -194,10 +194,8 @@ def test_importar_whatsapp_android(tmp_path):
     assert "semana que viene" in k.mensajes[2].texto and k.id_consulta.startswith("C-")
 
 
-def test_panel_importa_whatsapp_con_resultados(tmp_path, monkeypatch):
-    import panel.servidor as srv
-    monkeypatch.setattr(srv, "RAIZ", tmp_path)
-    monkeypatch.setattr(srv, "OUT", tmp_path / "out")
+def test_panel_importa_whatsapp_con_resultados(panel_tmp):
+    srv, _ = panel_tmp
     chat = "12/03/26, 10:00 - Laura Pérez: Hola, busco baulera en Caballito para fin de mes. Mi cel 11 5555 4444\n12/03/26, 10:20 - Don Box: ¡Hola!\n"
     r = srv.importar({"archivos": [{"nombre": "chat_1.txt", "contenido": chat},
                                     {"nombre": "res.csv", "contenido": "archivo,resultado\nchat_1.txt,Alquiló\n"}],

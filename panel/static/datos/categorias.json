@@ -1,0 +1,145 @@
+{
+ "etapas": {
+  "primer_contacto": "Primer contacto",
+  "post_24h": "Después de 24 h"
+ },
+ "acciones": {
+  "responder": "Responder (borrador si la ventana está abierta; plantilla si está cerrada)",
+  "plantilla": "Enviar una plantilla aprobada",
+  "persona": "Lo atiende una persona",
+  "derivar": "Derivar a otra área",
+  "no_escribir": "No escribir más"
+ },
+ "categorias": [
+  {
+   "id": "alta_intencion",
+   "etapa": "primer_contacto",
+   "nombre": "Alta intención",
+   "descripcion": "El prospecto dice en qué zona o sucursal quiere la baulera y que la necesita en las próximas semanas o antes.",
+   "accion": "responder",
+   "color": "#1F5E57",
+   "plantillas": []
+  },
+  {
+   "id": "lista_para_cotizar",
+   "etapa": "primer_contacto",
+   "nombre": "Lista para cotizar",
+   "descripcion": "El prospecto dice la zona y además qué quiere guardar o para qué, pero no dice que lo necesite pronto.",
+   "accion": "responder",
+   "color": "#2F6FA3",
+   "plantillas": []
+  },
+  {
+   "id": "exploratoria",
+   "etapa": "primer_contacto",
+   "nombre": "Exploratoria",
+   "descripcion": "El prospecto da un solo dato: solo la zona, solo pregunta el precio o solo cuenta para qué la necesita.",
+   "accion": "responder",
+   "color": "#A0782C",
+   "plantillas": []
+  },
+  {
+   "id": "informacion_insuficiente",
+   "etapa": "primer_contacto",
+   "nombre": "Faltan datos",
+   "descripcion": "El prospecto solo saluda o pide información en general, sin decir zona, qué guarda, cuándo ni para qué.",
+   "accion": "responder",
+   "color": "#8C948F",
+   "plantillas": [
+    "pedido_datos_v1"
+   ]
+  },
+  {
+   "id": "no_es_prospecto",
+   "etapa": "primer_contacto",
+   "nombre": "No es prospecto",
+   "descripcion": "Escribe un cliente actual por su baulera, alguien que busca trabajo, un proveedor que ofrece algo, spam o un número equivocado.",
+   "accion": "derivar",
+   "color": "#A3A8A5",
+   "plantillas": []
+  },
+  {
+   "id": "nunca_respondio",
+   "etapa": "post_24h",
+   "nombre": "No respondió a Ventas",
+   "descripcion": "Ventas le contestó la consulta y el prospecto no volvió a escribir nada después de esa respuesta.",
+   "accion": "plantilla",
+   "color": "#8C948F",
+   "plantillas": [
+    "seguimiento_cotizacion_v1",
+    "seguimiento_mudanza_v1",
+    "pedido_datos_v1"
+   ]
+  },
+  {
+   "id": "se_enfrio",
+   "etapa": "post_24h",
+   "nombre": "Conversó y se enfrió",
+   "descripcion": "El prospecto conversó con Ventas, dio datos o recibió la cotización, y después dejó de responder sin decir por qué.",
+   "accion": "plantilla",
+   "color": "#2F6FA3",
+   "plantillas": [
+    "seguimiento_cotizacion_v1",
+    "seguimiento_mudanza_v1",
+    "seguimiento_empresa_v1"
+   ]
+  },
+  {
+   "id": "pidio_tiempo",
+   "etapa": "post_24h",
+   "nombre": "Pidió tiempo",
+   "descripcion": "El prospecto dijo que lo piensa, que lo consulta en casa o que avisa más adelante.",
+   "accion": "plantilla",
+   "color": "#6D5BA8",
+   "plantillas": [
+    "retomar_mas_adelante_v1"
+   ]
+  },
+  {
+   "id": "quiere_reservar",
+   "etapa": "post_24h",
+   "nombre": "Quiere reservar",
+   "descripcion": "El prospecto preguntó cómo reservar, cómo pagar o qué documentos necesita, o dijo que la toma.",
+   "accion": "persona",
+   "color": "#127A4A",
+   "plantillas": []
+  },
+  {
+   "id": "objecion_precio",
+   "etapa": "post_24h",
+   "nombre": "Le parece caro",
+   "descripcion": "El prospecto dijo que el precio es alto, que se le va de presupuesto o pidió un descuento.",
+   "accion": "persona",
+   "color": "#B4532A",
+   "plantillas": []
+  },
+  {
+   "id": "volvio_interesado",
+   "etapa": "post_24h",
+   "nombre": "Volvió interesado",
+   "descripcion": "Después de un tiempo sin escribir, el prospecto volvió a escribir con interés: pregunta precio, disponibilidad o quiere avanzar.",
+   "accion": "responder",
+   "color": "#1F5E57",
+   "plantillas": []
+  },
+  {
+   "id": "desistio",
+   "etapa": "post_24h",
+   "nombre": "Desistió",
+   "descripcion": "El prospecto dijo que ya no lo necesita, que lo resolvió de otra forma o que eligió otro lugar.",
+   "accion": "no_escribir",
+   "color": "#5B6360",
+   "plantillas": []
+  }
+ ],
+ "eliminadas": [],
+ "plantillas": [
+  "seguimiento_cotizacion_v1",
+  "seguimiento_mudanza_v1",
+  "seguimiento_empresa_v1",
+  "pedido_datos_v1",
+  "reenganche_suave_v1",
+  "retomar_mas_adelante_v1",
+  "promo_vieja_2025"
+ ]
+}

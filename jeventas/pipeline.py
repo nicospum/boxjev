@@ -12,11 +12,14 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 from . import estado as est
+from .categorias import ETAPA_POR_PUNTO, SIN_CATEGORIA, Categorias
+from .categorias import leer as leer_categoria
+from .categorias import preguntas as preguntas_categoria
 from .modelo import Consulta
 from .plantillas import CatalogoPlantillas
 from .preguntas import VERSION_PREGUNTAS, preguntas_para_jev
 from .reglas import clasificar
-from .ventana import MARGEN_SEGUIMIENTO_LIBRE, VENTANA, estado_ventana
+from .ventana import MARGEN_SEGUIMIENTO_LIBRE, VENTANA, estado_ventana  # noqa: F401
 
 UN_MINUTO = timedelta(minutes=1)
 RAFAGA = timedelta(minutes=10)
@@ -63,10 +66,96 @@ def _observado(c: Consulta, ahora: datetime) -> dict:
     }
 
 
-def evaluar(c: Consulta, ahora: datetime, motivo: str, jev, redactor, catalogo: CatalogoPlantillas) -> dict:
+EQUIVALENCIA_SEGMENTO = {"listo_para_reservar": "quiere_reservar"}
+
+
+def categoria_desde_jev(respuestas: dict, cats_etapa: list[dict], etapa: str, segmento: str | None = None) -> dict:
+    """segmento: lo que indican las preguntas puntuales (reglas.py). Si equivale a una categoría
+    existente y Jev eligió otra con la descripción completa, gana la de las señales y queda para revisar:
+    con condiciones compuestas ("zona Y pronto") las preguntas puntuales son más confiables."""
+    lect = leer_categoria(respuestas, cats_etapa)
+    ids = {c["id"] for c in cats_etapa}
+    por_senales = EQUIVALENCIA_SEGMENTO.get(segmento or "", segmento)
+    if por_senales in ids and lect["id"] not in (SIN_CATEGORIA, por_senales):
+        nombre = {c["id"]: c["nombre"] for c in cats_etapa}
+        lect.update({"elegida_por_jev": lect["id"], "id": por_senales, "revisar": True, "por_senales": True,
+                     "motivo": f"Con la descripción completa Jev eligió «{nombre[lect['id']]}», pero las preguntas puntuales indican «{nombre[por_senales]}»."})
+    c = next((x for x in cats_etapa if x["id"] == lect["id"]), None)
+    lect.update({"etapa": etapa, "origen": "jev"})
+    if c:
+        lect.update({k: c[k] for k in ("nombre", "descripcion", "accion", "color")})
+    else:
+        lect.update({"nombre": "Sin categoría", "descripcion": lect.get("motivo") or "", "accion": None, "color": "#C77D12"})
+    return lect
+
+
+def _seguimiento_o_espera(v: dict) -> dict:
+    if v["horas_restantes"] <= MARGEN_SEGUIMIENTO_LIBRE.total_seconds() / 3600 and v["mensajes_ventas_sin_respuesta"] < 2:
+        return {"tipo": "seguimiento_libre_antes_de_cierre",
+                "detalle": f"Quedan {v['horas_restantes']:.1f} h de ventana: se puede enviar un último mensaje libre."}
+    return {"tipo": "esperar", "detalle": f"Ventana abierta {v['horas_restantes']:.1f} h más; Ventas ya respondió."}
+
+
+def decidir_por_categoria(clasif: dict, v: dict, conversacion: list[dict], cats: Categorias, redactor, catalogo: CatalogoPlantillas, ahora: datetime) -> dict:
+    """La acción la define la categoría; la ventana de 24 h la limita siempre."""
+    cat = clasif["categoria"]
+    if cat["id"] == SIN_CATEGORIA:
+        return {"tipo": "revisar_categoria", "detalle": cat.get("motivo") or "Elegí la categoría a mano."}
+    accion = cat["accion"]
+    if accion == "derivar":
+        return {"tipo": "derivar", "detalle": f"Categoría '{cat['nombre']}': derivar a quien corresponda."}
+    if accion == "no_escribir":
+        return {"tipo": "cerrar_sin_mensaje", "detalle": "Registrar como perdido; no enviar más mensajes."}
+    if accion == "persona":
+        return {"tipo": "atencion_humana_prioritaria", "detalle": f"Categoría '{cat['nombre']}': lo atiende una persona."}
+    # responder / plantilla
+    if v["abierta"] and v["ultimo_autor"] == "cliente":
+        return {"tipo": "borrador_libre", "borrador": redactor.redactar(conversacion, clasif)}
+    if v["abierta"]:
+        return _seguimiento_o_espera(v)
+    definida = cats.obtener(cat["id"]) or {}
+    rec = catalogo.recomendar(cat["id"], clasif.get("necesidad"), v["plantillas_sin_respuesta"], ahora,
+                              ids=definida.get("plantillas") or None)
+    return {"tipo": "plantilla" if rec["plantilla"] else "sin_plantilla", **rec}
+
+
+def _decidir_por_segmento(clasif: dict, v, state: dict, redactor, catalogo: CatalogoPlantillas, ahora: datetime) -> dict:
+    """Decisión por la tabla fija de reglas.py (sin categorías editables)."""
+    seg = clasif["segmento"]
+    if seg == "no_es_prospecto":
+        return {"tipo": "derivar", "detalle": clasif["motivo_revision"]}
+    if seg == "desistio":
+        return {"tipo": "cerrar_sin_mensaje", "detalle": "Registrar como perdido; no enviar plantillas."}
+    if v.abierta and v.ultimo_autor == "cliente":
+        if seg in ("listo_para_reservar", "objecion_precio", "revision_humana"):
+            return {"tipo": "atencion_humana_prioritaria", "detalle": clasif["motivo_revision"]}
+        return {"tipo": "borrador_libre", "borrador": redactor.redactar(state["conversacion"], clasif)}
+    if v.abierta:
+        return _seguimiento_o_espera(v.a_dict())
+    rec = catalogo.recomendar(seg, clasif["necesidad"], v.plantillas_sin_respuesta, ahora)
+    return {"tipo": "plantilla" if rec["plantilla"] else "sin_plantilla", **rec}
+
+
+def reclasificar(rec: dict, state: dict, jev, cats: Categorias, redactor, catalogo: CatalogoPlantillas, solo_entre: list[str] | None = None) -> dict:
+    """Vuelve a preguntar a Jev SOLO la categoría (sobre el state guardado) y recalcula la acción.
+    solo_entre: limitar a esas categorías (para sugerir a dónde mover a los que quedaron sueltos)."""
+    etapa = ETAPA_POR_PUNTO[rec["punto"]]
+    cats_etapa = [c for c in cats.de_etapa(etapa) if not solo_entre or c["id"] in solo_entre]
+    resp = jev.preguntar(state, preguntas_categoria(cats_etapa))
+    nuevo = dict(rec)
+    segmento = None if solo_entre else rec["clasificacion"].get("segmento")
+    nuevo["clasificacion"] = {**rec["clasificacion"], "categoria": categoria_desde_jev(resp["respuestas"], cats_etapa, etapa, segmento)}
+    nuevo["accion"] = decidir_por_categoria(nuevo["clasificacion"], rec["ventana"], state["conversacion"], cats, redactor, catalogo,
+                                            datetime.fromisoformat(rec["evaluado_en"]))
+    return nuevo
+
+
+def evaluar(c: Consulta, ahora: datetime, motivo: str, jev, redactor, catalogo: CatalogoPlantillas, cats: Categorias | None = None) -> dict:
     v = estado_ventana(c, ahora)
     state = est.construir_estado(c, ahora, v)
-    preguntas = preguntas_para_jev()
+    etapa = ETAPA_POR_PUNTO[motivo]
+    cats_etapa = cats.de_etapa(etapa) if cats else []
+    preguntas = {**preguntas_para_jev(), **preguntas_categoria(cats_etapa)}  # una sola llamada
     respuesta_jev = jev.preguntar(state, preguntas)
 
     msgs = c.mensajes_hasta(ahora)
@@ -76,27 +165,11 @@ def evaluar(c: Consulta, ahora: datetime, motivo: str, jev, redactor, catalogo: 
     if primer_ventas is None:  # si Ventas todavía no escribió, que haya una pregunta pendiente es obvio
         clasif["alertas"] = [a for a in clasif["alertas"] if "pregunta" not in a]
 
-    accion: dict
-    seg = clasif["segmento"]
-    if seg == "no_es_prospecto":
-        accion = {"tipo": "derivar", "detalle": clasif["motivo_revision"]}
-    elif seg == "desistio":
-        accion = {"tipo": "cerrar_sin_mensaje", "detalle": "Registrar como perdido; no enviar plantillas."}
-    elif v.abierta and v.ultimo_autor == "cliente":
-        if seg in ("listo_para_reservar", "objecion_precio", "revision_humana"):
-            accion = {"tipo": "atencion_humana_prioritaria", "detalle": clasif["motivo_revision"]}
-        else:
-            accion = {"tipo": "borrador_libre", "borrador": redactor.redactar(state["conversacion"], clasif)}
-    elif v.abierta:
-        # habló último Ventas y la ventana sigue abierta
-        if v.horas_restantes <= MARGEN_SEGUIMIENTO_LIBRE.total_seconds() / 3600 and v.mensajes_ventas_sin_respuesta < 2:
-            accion = {"tipo": "seguimiento_libre_antes_de_cierre",
-                      "detalle": f"Quedan {v.horas_restantes:.1f} h de ventana: se puede enviar un último mensaje libre."}
-        else:
-            accion = {"tipo": "esperar", "detalle": f"Ventana abierta {v.horas_restantes:.1f} h más; Ventas ya respondió."}
+    if cats is not None:
+        clasif["categoria"] = categoria_desde_jev(respuesta_jev["respuestas"], cats_etapa, etapa, clasif["segmento"])
+        accion = decidir_por_categoria(clasif, v.a_dict(), state["conversacion"], cats, redactor, catalogo, ahora)
     else:
-        rec = catalogo.recomendar(seg, clasif["necesidad"], v.plantillas_sin_respuesta, ahora)
-        accion = {"tipo": "plantilla" if rec["plantilla"] else "sin_plantilla", **rec}
+        accion = _decidir_por_segmento(clasif, v, state, redactor, catalogo, ahora)
 
     return {
         "id_consulta": c.id_consulta,
