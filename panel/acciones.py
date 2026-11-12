@@ -224,6 +224,12 @@ def deshacer_movimiento(nombre: str, clave_rec: str) -> dict:
 
 
 # ---------------------------------------------------------------- categorías
+def historial() -> dict:
+    from jeventas import ejemplos
+
+    return ejemplos.estadisticas(OUT)
+
+
 def ver_categorias() -> dict:
     d = categorias().a_dict()
     d["plantillas"] = [p["id"] for p in leer_json(RAIZ / "config" / "plantillas.json", {"plantillas": []})["plantillas"]]
@@ -344,7 +350,8 @@ def reclasificar_lote(nombre: str) -> dict:
 
 
 # ---------------------------------------------------------------- agregar lote
-def agregar_lote(contactos: list[dict], etiqueta: str = "", usar_jev_real: bool = True, simular_plantillas: bool = True) -> dict:
+def agregar_lote(contactos: list[dict], etiqueta: str = "", usar_jev_real: bool = True, simular_plantillas: bool = True,
+                 tipo: str = "actual") -> dict:
     """contactos: [{'texto': conversación pegada, 'nombre': nombre a borrar (opcional),
     'ultimo_hace_horas': horas desde el último mensaje (opcional), 'resultado': alquilo/no_alquilo/desconocido}]"""
     if not contactos:
@@ -367,23 +374,26 @@ def agregar_lote(contactos: list[dict], etiqueta: str = "", usar_jev_real: bool 
         consultas.append(k)
     if not consultas:
         raise ErrorPanel("Pegá al menos una conversación.")
-    return _correr_lote(consultas, etiqueta or "contactos", usar_jev_real, simular_plantillas, entrada="pegado en el panel")
+    return _correr_lote(consultas, etiqueta or "contactos", usar_jev_real, simular_plantillas, entrada="pegado en el panel", tipo=tipo)
 
 
-def _correr_lote(consultas, etiqueta: str, usar_jev_real: bool, simular_plantillas: bool, entrada: str) -> dict:
+def _correr_lote(consultas, etiqueta: str, usar_jev_real: bool, simular_plantillas: bool, entrada: str, tipo: str = "actual") -> dict:
+    tipo = "historial" if tipo == "historial" else "actual"
     if usar_jev_real:
         if not ajustes.aprobado():
             raise ErrorPanel("Para usar Jev real, activá en Ajustes que Don Box aprobó enviar conversaciones anonimizadas.")
         if not ajustes.clave("typesafe"):
             raise ErrorPanel("Falta la clave de TypeSafe (Jev). Cargala en Ajustes.")
     try:
-        jev, redactor, catalogo = herramientas("api" if usar_jev_real else "simulado", ajustes.proveedor_borradores(),
+        # En el historial no hacen falta borradores nuevos: lo que importa es qué respondió Ventas.
+        prov = "offline" if tipo == "historial" else ajustes.proveedor_borradores()
+        jev, redactor, catalogo = herramientas("api" if usar_jev_real else "simulado", prov,
                                                ajustes.aprobado(), simular_plantillas)
     except Exception as e:  # noqa: BLE001
         raise ErrorPanel(str(e)) from e
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     limpio = re.sub(r"[^\w-]", "_", etiqueta.strip())[:40] or "lote"
     nombre = f"{ts}_{limpio}"
-    res = correr(consultas, OUT / nombre, jev, redactor, catalogo, entrada=entrada)
+    res = correr(consultas, OUT / nombre, jev, redactor, catalogo, entrada=entrada, tipo=tipo)
     return {"lote": nombre, "consultas": res["meta"]["consultas"], "sugerencias": res["meta"]["recomendaciones"],
             "errores": [e["error"] for e in res["errores"][:3]]}

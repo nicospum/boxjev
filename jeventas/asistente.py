@@ -23,6 +23,9 @@ Hay dos etapas de categorías: "primer_contacto" (el primer mensaje del prospect
 descripción escrita como situación observable: Jev clasifica leyendo esa descripción, así que
 tiene que ser concreta (qué dice o hace el prospecto), una sola situación, sin depender de otras.
 
+Hay lotes "actuales" (para clasificar y responder) y lotes de "historial" (conversaciones terminadas con
+resultado conocido): de ahí el redactor toma ejemplos de respuestas que funcionaron y que no.
+
 Cómo trabajar:
 - Usá las herramientas para consultar datos antes de responder; no inventes números ni contactos.
 - Crear, editar categorías, mover contactos y reclasificar se hacen directo. Contá qué hiciste.
@@ -63,6 +66,8 @@ HERRAMIENTAS = [
      "parameters": _p({"lote": _S, "clave": _S, "categoria": _S}, ["lote", "clave", "categoria"])},
     {"name": "reclasificar_lote", "description": "Jev vuelve a elegir la categoría de cada contacto del lote con las descripciones actuales.",
      "parameters": _p({"lote": _S}, ["lote"])},
+    {"name": "ver_historial", "description": "Qué funcionó en los lotes de historial: por categoría (casos, siguieron la charla, alquilaron) y por plantilla (enviadas, respondieron, alquilaron).",
+     "parameters": _p({}, [])},
     {"name": "mostrar", "description": "Cambia lo que se ve en pantalla.",
      "parameters": _p({"vista": {"type": "string", "enum": ["consultas", "categorias", "resumen"]},
                        "lote": _S, "categoria": _S, "id_consulta": _S}, ["vista"])},
@@ -111,6 +116,8 @@ def conversar(proveedor: str, historial: list[dict], lote: str | None, acciones)
             if nombre == "reclasificar_lote":
                 cambios = True
                 return acciones.reclasificar_lote(a["lote"])
+            if nombre == "ver_historial":
+                return acciones.historial()
             if nombre == "mostrar":
                 ui.append({k: v for k, v in a.items() if v})
                 return {"ok": True}

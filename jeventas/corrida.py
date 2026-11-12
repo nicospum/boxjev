@@ -34,7 +34,7 @@ def herramientas(jev: str = "simulado", redactor: str = "offline", envio_externo
     j = JevAPI(envio_externo_aprobado, api_key=ajustes.clave("typesafe")) if jev == "api" else JevSimulado()
     info = cargar_info(RAIZ / "config" / "info_comercial.json")
     prov = "anthropic" if redactor == "claude" else redactor
-    r = RedactorOffline(info) if prov == "offline" else RedactorIA(info, prov, envio_externo_aprobado)
+    r = RedactorOffline(info) if prov == "offline" else RedactorIA(info, prov, envio_externo_aprobado, dir_historial=RAIZ / "out")
     c = CatalogoPlantillas(RAIZ / "config" / "plantillas.json", simular=simular_plantillas)
     return j, r, c
 
@@ -44,7 +44,8 @@ def categorias() -> Categorias:
 
 
 def correr(consultas: Iterable[Consulta], salida: Path, jev, redactor, catalogo: CatalogoPlantillas, entrada: str = "",
-           cats: Categorias | None = None) -> dict:
+           cats: Categorias | None = None, tipo: str = "actual") -> dict:
+    """tipo: 'actual' (para clasificar y responder) o 'historial' (conversaciones terminadas: ejemplos para el redactor)."""
     cats = cats or categorias()
     salida = Path(salida)
     (salida / "payloads").mkdir(parents=True, exist_ok=True)
@@ -102,6 +103,7 @@ def correr(consultas: Iterable[Consulta], salida: Path, jev, redactor, catalogo:
         "recomendaciones": len(recs),
         "errores": len(errores),
         "fecha": datetime.now().isoformat(timespec="seconds"),
+        "tipo": tipo if tipo in ("actual", "historial") else "actual",
     }
     (salida / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
     (salida / "metricas.json").write_text(json.dumps(m, ensure_ascii=False, indent=1), encoding="utf-8")

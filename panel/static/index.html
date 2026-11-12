@@ -29,6 +29,7 @@
     <button id="btnAgregarLote" class="boton-barra senal">Agregar lote</button>
     <button id="btnAjustes" class="boton-barra" aria-label="Ajustes">Ajustes</button>
     <button id="btnChat" class="boton-barra" aria-expanded="false">Asistente</button>
+    <a id="btnSalir" class="boton-barra" href="/salir" hidden>Salir</a>
   </div>
 </header>
 <div id="aviso" class="aviso" hidden></div>
@@ -76,6 +77,10 @@
           <small>Solo para archivos .txt. Si son varios nombres, separalos con comas.</small></label>
         <label class="campo"><span>Nombre del lote</span><input id="etiquetaLote" type="text" placeholder="consultas_octubre"></label>
       </div>
+      <div class="tipo-lote" role="radiogroup" aria-label="Tipo de lote">
+        <label class="tipo"><input type="radio" name="impTipo" value="actual" checked><span><b>Para clasificar</b>Consultas actuales: Jev las clasifica y el sistema sugiere qué responder.</span></label>
+        <label class="tipo"><input type="radio" name="impTipo" value="historial"><span><b>Historial</b>Conversaciones terminadas, con resultado conocido. El redactor aprende de lo que funcionó y de lo que no.</span></label>
+      </div>
       <fieldset class="opciones">
         <legend>Con qué clasificar</legend>
         <label class="opcion"><input type="radio" name="jev" value="api" checked><span><b>Jev real.</b> Envía las conversaciones, ya anonimizadas, a TypeSafe.</span></label>
@@ -109,6 +114,10 @@
 <dialog id="dlgLote" class="dialogo ancho">
   <form method="dialog" class="dlg-cab"><h2>Agregar lote</h2><button class="boton-icono" aria-label="Cerrar">×</button></form>
   <p class="bajada">Pegá cada conversación tal como la copiás de WhatsApp, o escribila con «Cliente:» y «Ventas:» al principio de cada línea. Se borran teléfonos, emails y el nombre que indiques, y después Jev la clasifica.</p>
+  <div class="tipo-lote" role="radiogroup" aria-label="Tipo de lote">
+    <label class="tipo"><input type="radio" name="loteTipo" value="actual" checked><span><b>Para clasificar</b>Consultas actuales: Jev las clasifica y el sistema sugiere qué responder.</span></label>
+    <label class="tipo"><input type="radio" name="loteTipo" value="historial"><span><b>Historial</b>Conversaciones terminadas, con resultado conocido. El redactor aprende de lo que funcionó y de lo que no.</span></label>
+  </div>
   <div id="loteContactos" class="lote-contactos"></div>
   <button id="btnMasContacto" class="boton">Sumar otro contacto</button>
   <div class="campos lote-pie">

@@ -25,9 +25,25 @@ Se abre en `http://127.0.0.1:8765` y corre **solo en esta computadora**: claves 
 
 Todo queda en `config/ajustes.local.json`, que no se sube a git. Las claves nunca vuelven al navegador.
 
+### Login y link público (para usarlo desde otra computadora)
+
+```bash
+python scripts/abrir_panel.py --usuario Alberto --clave "LA-CLAVE"   # una vez: activa el login y lo guarda cifrado
+python scripts/abrir_panel.py --publico                                # link https://….trycloudflare.com
+```
+
+El usuario y la contraseña quedan cifrados en `config/acceso.local.json` (no se sube a git). `--publico` usa `cloudflared` (si falta: `winget install --id Cloudflare.cloudflared`), exige login y crea un link nuevo cada vez. **Los datos y las claves siguen en esta PC**: el link funciona mientras esa ventana esté abierta y muere al cerrarla (Ctrl+C). Para cambiar la contraseña, repetir el primer comando.
+
+### Lotes: para clasificar o historial
+
+- **Para clasificar:** consultas actuales. Jev las clasifica y el sistema sugiere qué responder.
+- **Historial:** conversaciones terminadas con resultado conocido (alquiló / no alquiló). Se clasifican igual, y de cada momento se guarda qué respondió Ventas y qué pasó después. Cuando el redactor escribe un borrador para una categoría, recibe **respuestas reales que funcionaron y que no** de esa misma categoría. No es entrenamiento: el modelo no cambia, ve ejemplos en cada pedido. A Jev el historial no le cambia nada; sirve para medirlo y mejorar las descripciones.
+
+En Categorías, cada tarjeta muestra cuántos casos de historial tiene, cuántos siguieron la charla y cuántos alquilaron. En Resumen aparece qué plantillas funcionaron.
+
 ### Secciones
 
-- **Agregar lote** (botón amarillo): pegar conversaciones de 1 a 200 contactos, con «Cliente:» y «Ventas:» o copiadas de WhatsApp. Opcional: nombre a borrar, hace cuántas horas fue el último mensaje y el resultado si se conoce. Jev real o simulado.
+- **Agregar lote** (botón amarillo): pegar conversaciones de 1 a 200 contactos, con «Cliente:» y «Ventas:» o copiadas de WhatsApp, eligiendo si son para clasificar o historial. Opcional: nombre a borrar, hace cuántas horas fue el último mensaje y el resultado si se conoce. Jev real o simulado.
 - **Consultas:** lista filtrable por categoría, el chat y, al costado, la categoría, por qué, las probabilidades de Jev, los cuatro datos para cotizar, la sugerencia y "Tu revisión". Se puede **cambiar la categoría** a mano.
 - **Categorías:** las dos etapas, quién está en cada categoría y su información. **Crear, editar y eliminar.** Al eliminar, Jev sugiere la mejor categoría restante para cada contacto que quedó suelto y Alberto **acepta o elige otra**. "Reclasificar este lote con Jev" vuelve a ubicar a todos después de editar descripciones (los cambios manuales se mantienen).
 - **Resumen:** coincidencia con Ventas, distribución por categoría, acciones y cuántos alquilaron según cómo empezaron.

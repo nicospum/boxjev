@@ -58,6 +58,7 @@ function toast(msg) {
 
 async function pedir(url, opts) {
   const r = await fetch(url, opts);
+  if (r.status === 401 && local()) { location.href = "/login"; throw new Error("Sesión vencida"); }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || `Error ${r.status}`);
   return j;
@@ -93,6 +94,8 @@ async function detectarModo() {
     E.modo = "local";
     setCats(await pedir("api/categorias"));
     E.ajustes = await pedir("api/ajustes");
+    E.historial = await pedir("api/historial");
+    $("#btnSalir").hidden = !(await pedir("api/sesion")).login;
   } catch {
     E.modo = "demo";
     E.corridas = await pedir("datos/corridas.json");
@@ -132,6 +135,7 @@ async function recargarTodo(lote) {
   if (local()) {
     E.corridas = await pedir("api/corridas");
     setCats(await pedir("api/categorias"));
+    E.historial = await pedir("api/historial");
   }
   if (lote) E.corrida = lote;
   pintarCorridas();
@@ -153,7 +157,8 @@ function descCorrida(c) {
   const m = c.meta || {};
   const jev = m.jev === "simulado" ? "Jev simulado" : `Jev real`;
   const datos = m.sinteticas ? "inventadas" : "reales";
-  return `${c.nombre}: ${m.consultas ?? "?"} consultas ${datos}, ${jev}`;
+  const tipo = m.tipo === "historial" ? "Historial, " : "";
+  return `${c.nombre}: ${tipo}${m.consultas ?? "?"} consultas ${datos}, ${jev}`;
 }
 function pintarCorridas() {
   const sel = $("#selCorrida");
@@ -167,6 +172,7 @@ function pintarAviso() {
   if (m.jev === "simulado") partes.push("Jev está simulado (sus probabilidades no significan nada)");
   if (m.plantillas_simuladas) partes.push("las plantillas son ejemplos, no están aprobadas");
   let txt = partes.length ? `En este lote ${partes.join(", ")}.` : "";
+  if (m.tipo === "historial") txt = `Este lote es historial: las respuestas de Ventas sirven de ejemplo al redactor. ${txt}`;
   if (!local()) txt += " Versión de demostración: solo lectura, tus revisiones quedan en este navegador.";
   const pend = (E.datos.reasignaciones || []).filter((x) => x.estado === "pendiente").length;
   if (pend) txt += ` Hay ${pend} ${pend === 1 ? "contacto" : "contactos"} esperando que confirmes su nueva categoría (en Categorías).`;
@@ -309,7 +315,7 @@ function pintarLectura() {
   if (ac.tipo === "borrador_libre") {
     const b = ac.borrador || {};
     sug = `<div class="sugerencia"><div class="sug-accion">${ACCION[ac.tipo]}</div><div class="sug-texto">${esc(b.texto)}</div>
-      <div class="sug-pie"><button class="boton chico" data-copiar="${esc(b.texto)}">Copiar</button><span>Borrador${b.modelo && b.modelo !== "offline" ? ` de ${esc(b.modelo)}` : ""}: lo revisa y lo envía una persona.</span>
+      <div class="sug-pie"><button class="boton chico" data-copiar="${esc(b.texto)}">Copiar</button><span>Borrador${b.modelo && b.modelo !== "offline" ? ` de ${esc(b.modelo)}` : ""}${b.ejemplos_historial ? `, con ${b.ejemplos_historial.buenos} ejemplos que funcionaron y ${b.ejemplos_historial.malos} que no` : ""}: lo revisa y lo envía una persona.</span>
       ${(b.riesgos || []).map((x) => `<span class="etiqueta-mini">Revisar: ${esc(x)}</span>`).join("")}</div></div>`;
   } else if (ac.tipo === "plantilla") {
     const p = ac.plantilla;
@@ -429,6 +435,7 @@ function pintarCategorias() {
           <div class="cat-sup"><span class="cat-nombre">${esc(c.nombre)}</span><span class="cat-n">${miembros.length} ${miembros.length === 1 ? "contacto" : "contactos"}</span></div>
           <p class="cat-desc">${esc(c.descripcion)}</p>
           <div class="cat-meta">${c.accion ? `<span class="dato-chip">${esc(ACCION_CAT[c.accion])}</span>` : ""}${plantillas}</div>
+          ${histCat(c.id)}
           <div class="cat-botones">
             ${miembros.length ? `<button class="boton-texto" data-ver>${abierta ? "Ocultar contactos" : "Ver contactos"}</button>` : ""}
             ${local() && c.id !== "sin_categoria" ? `<span style="flex:1"></span><button class="boton chico" data-editar>Editar</button><button class="boton chico peligro" data-eliminar>Eliminar</button>` : ""}
@@ -451,6 +458,12 @@ function pintarCategorias() {
     </div>
     ${pendHtml}
     <div class="etapas">${etapas}</div></div>`;
+}
+
+function histCat(id) {
+  const h = E.historial?.por_categoria?.[id];
+  if (!h) return "";
+  return `<div class="hist">Historial: <b>${h.casos}</b> ${h.casos === 1 ? "caso" : "casos"}, siguió la charla <b>${pct(h.respondieron / h.casos)}</b>, alquilaron <b>${h.alquilaron}</b>. El redactor tiene <b>${h.ejemplos_buenos}</b> ${h.ejemplos_buenos === 1 ? "ejemplo que funcionó" : "ejemplos que funcionaron"}.</div>`;
 }
 
 function abrirCategoria(cat, etapa) {
@@ -559,11 +572,22 @@ function pintarResumen() {
       <div class="panel"><h2>Después de 24 h</h2><p class="nota">Último momento de cada contacto</p><div class="barras">${barras(cuentaPost, ordenQ) || `<p class="nota">Todavía no pasaron 24 h en ningún contacto.</p>`}</div></div>
       ${matriz}
       <div class="panel"><h2>Qué sugirió hacer</h2><p class="nota">${recs.length} momentos en que había que decidir algo</p><div class="barras">${acciones}</div></div>
+      ${panelPlantillas()}
       <div class="panel"><h2>Cuántos alquilaron, según cómo empezaron</h2><p class="nota">Muestra si las categorías separan bien. No prueba que el sistema cause ventas.</p>
         <div class="leyenda"><span style="--c:${COL.alquilo}">Alquiló</span><span style="--c:${COL.no_alquilo}">No alquiló</span><span style="--c:#D5DAD6">Sin dato</span></div>
         <div class="barras">${resultados}</div></div>
     </div>
     <div class="resumen-acciones">${local() ? `<a class="boton" href="api/revisiones.csv?nombre=${encodeURIComponent(E.corrida)}">Descargar tus revisiones (CSV)</a>` : `<button class="boton" id="btnCsvDemo">Descargar tus revisiones (CSV)</button>`}</div></div>`;
+}
+
+function panelPlantillas() {
+  const pp = Object.entries(E.historial?.por_plantilla || {}).sort((a, b) => b[1].enviadas - a[1].enviadas);
+  if (!pp.length) return "";
+  return `<div class="panel ancho"><h2>Qué plantillas funcionaron en el historial</h2>
+    <p class="nota">De todos los lotes de historial: cuántas veces se envió cada plantilla, cuántos respondieron y cuántos terminaron alquilando.</p>
+    <div style="overflow-x:auto"><table class="matriz"><thead><tr><th class="fila">Plantilla</th><th>Enviadas</th><th>Respondieron</th><th>Alquilaron</th></tr></thead><tbody>
+    ${pp.map(([id, x]) => `<tr><th class="fila">${esc(id)}</th><td>${x.enviadas}</td><td>${x.respondieron} (${pct(x.respondieron / x.enviadas)})</td><td>${x.alquilaron}</td></tr>`).join("")}
+    </tbody></table></div></div>`;
 }
 
 function descargarCsvDemo() {
@@ -598,6 +622,7 @@ async function importar() {
     const archivos = await Promise.all(archivosElegidos.map(async (f) => ({ nombre: f.name, contenido: await f.text() })));
     est.textContent = "Clasificando conversaciones. Puede tardar un poco.";
     const r = await post("api/importar", { archivos, jev: document.querySelector("input[name=jev]:checked").value,
+      tipo: document.querySelector("input[name=impTipo]:checked").value,
       simular_plantillas: $("#simularPlantillas").checked, nombres_ventas: $("#nombresVentas").value, etiqueta: $("#etiquetaLote").value });
     archivosElegidos.length = 0; pintarArchivos();
     est.textContent = `Listo: ${r.consultas} consultas clasificadas.`;
@@ -644,10 +669,13 @@ async function clasificarLote() {
   est.classList.remove("error");
   if (!contactos.length) { est.textContent = "Pegá al menos una conversación."; est.classList.add("error"); return; }
   const real = document.querySelector("input[name=loteJev]:checked").value === "api";
+  const tipo = document.querySelector("input[name=loteTipo]:checked").value;
+  if (tipo === "historial" && contactos.every((c) => c.resultado === "desconocido")
+      && !confirm("Es historial pero ningún contacto tiene resultado. Sin resultado, el redactor no puede saber qué funcionó. ¿Seguir igual?")) return;
   $("#btnClasificarLote").disabled = true;
   est.textContent = real ? "Clasificando con Jev real…" : "Clasificando…";
   try {
-    const r = await post("api/lote/agregar", { contactos, etiqueta: $("#loteNombre").value || "contactos", jev_real: real, simular_plantillas: true });
+    const r = await post("api/lote/agregar", { contactos, etiqueta: $("#loteNombre").value || (tipo === "historial" ? "historial" : "contactos"), jev_real: real, simular_plantillas: true, tipo });
     $("#dlgLote").close();
     $("#loteContactos").innerHTML = "";
     await recargarTodo(r.lote);

@@ -16,6 +16,7 @@ import json
 import re
 from pathlib import Path
 
+from . import ejemplos
 from .jev import detectar_pii
 
 MODELO_CLAUDE = "claude-opus-5-5"
@@ -88,12 +89,13 @@ Devolvé solo el texto del mensaje."""
 class RedactorIA:
     """Borrador con un modelo generativo (Claude, OpenAI, DeepSeek o Gemini; ver proveedores.py)."""
 
-    def __init__(self, info: dict, proveedor: str, envio_externo_aprobado: bool | None = None) -> None:
+    def __init__(self, info: dict, proveedor: str, envio_externo_aprobado: bool | None = None, dir_historial: Path | None = None) -> None:
         from . import proveedores
 
         self.ia = proveedores.crear(proveedor, envio_externo_aprobado)
         self.info = info
         self.nombre = proveedor
+        self.dir_historial = dir_historial  # carpeta out/: de ahí salen los ejemplos del historial
 
     def redactar(self, conversacion: list[dict], clasif: dict) -> dict:
         if detectar_pii(conversacion):
@@ -104,16 +106,20 @@ class RedactorIA:
         cat = clasif.get("categoria") or {}
         contexto = {k: clasif.get(k) for k in ("necesidad", "sede", "datos_faltantes", "alertas")}
         contexto["categoria"] = {"nombre": cat.get("nombre"), "descripcion": cat.get("descripcion")}
+        ej = ejemplos.para_categoria(self.dir_historial, cat.get("id")) if self.dir_historial else {"buenos": [], "malos": []}
+        bloque = ejemplos.bloque_prompt(ej)
         usuario = (
             f"<info_comercial>\n{json.dumps(info, ensure_ascii=False, indent=1)}\n</info_comercial>\n"
             f"<clasificacion>\n{json.dumps(contexto, ensure_ascii=False)}\n</clasificacion>\n"
-            f"<conversacion>\n{json.dumps(conversacion, ensure_ascii=False, indent=1)}\n</conversacion>\n"
+            + (bloque + "\n" if bloque else "")
+            + f"<conversacion>\n{json.dumps(conversacion, ensure_ascii=False, indent=1)}\n</conversacion>\n"
             "Redactá el próximo mensaje de Ventas."
         )
         texto = self.ia.generar(_SISTEMA, usuario)
+        usados = {"buenos": len(ej["buenos"]), "malos": len(ej["malos"])}
         if not texto:
-            return {"texto": "", "modelo": self.ia.modelo, "riesgos": ["el modelo no generó borrador"]}
-        return {"texto": texto, "modelo": self.ia.modelo, "riesgos": verificar_borrador(texto)}
+            return {"texto": "", "modelo": self.ia.modelo, "riesgos": ["el modelo no generó borrador"], "ejemplos_historial": usados}
+        return {"texto": texto, "modelo": self.ia.modelo, "riesgos": verificar_borrador(texto), "ejemplos_historial": usados}
 
 
 def RedactorClaude(info: dict, envio_externo_aprobado: bool) -> RedactorIA:  # noqa: N802 (compatibilidad CLI)
