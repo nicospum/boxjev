@@ -90,6 +90,9 @@ class JevAPI:
                     time.sleep(espera)
                     espera *= 2
                     continue
+                if e.code in (401, 403):
+                    raise JevError("TypeSafe rechazó la clave. Revisá en Ajustes la clave de TypeSafe "
+                                   "(o dejala vacía para usar la de esta PC).") from e
                 raise JevError(f"TypeSafe respondió {e.code}: {detalle}") from e
             except (urllib.error.URLError, TimeoutError) as e:
                 if intento < self.reintentos:

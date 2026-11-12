@@ -171,6 +171,13 @@ GET = {
     "/api/ajustes": lambda q: ajustes.publico(),
     "/api/historial": lambda q: acciones.historial(),
 }
+def _actualizar_ajustes(cambios: dict) -> dict:
+    try:
+        return ajustes.actualizar(cambios)
+    except ValueError as e:
+        raise ErrorPanel(str(e)) from e
+
+
 POST = {
     "/api/revision": guardar_revision,
     "/api/importar": importar,
@@ -184,7 +191,7 @@ POST = {
     "/api/deshacer": lambda d: acciones.deshacer_movimiento(d.get("lote", ""), d.get("clave", "")),
     "/api/reasignacion": lambda d: acciones.resolver_reasignacion(d.get("lote", ""), d.get("clave", ""), bool(d.get("aceptar")), d.get("categoria")),
     "/api/reclasificar": lambda d: acciones.reclasificar_lote(d.get("lote", "")),
-    "/api/ajustes": lambda d: ajustes.actualizar(d.get("cambios") or {}),
+    "/api/ajustes": lambda d: _actualizar_ajustes(d.get("cambios") or {}),
     "/api/chat": chat,
 }
 

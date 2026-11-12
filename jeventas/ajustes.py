@@ -80,6 +80,9 @@ def publico() -> dict:
     }
 
 
+CLAVE_MIN = 20  # las API keys reales son mucho más largas
+
+
 def actualizar(cambios: dict) -> dict:
     with _candado:
         d = _leer()
@@ -90,7 +93,11 @@ def actualizar(cambios: dict) -> dict:
                 continue
             d.setdefault("claves", {})
             if valor:
-                d["claves"][servicio] = str(valor).strip()
+                valor = str(valor).strip()
+                if len(valor) < CLAVE_MIN or " " in valor:
+                    raise ValueError(f"La clave de {servicio} no parece una API key (es muy corta). "
+                                     "Si el navegador la autocompletó, borrá el campo y pegá la clave real.")
+                d["claves"][servicio] = valor
             else:
                 d["claves"].pop(servicio, None)
         for prov, m in (cambios.get("modelos") or {}).items():

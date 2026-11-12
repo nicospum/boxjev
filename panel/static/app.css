@@ -1,15 +1,15 @@
-/* JeVentas: chapa galvanizada, tinta verde oscura, un solo amarillo de señalización. */
+/* JeVentas: identidad Don Box, con azules y señalización naranja. */
 :root {
-  --chapa: #EEF0EE;
-  --chapa-2: #E3E7E4;
+  --chapa: #F2F5F9;
+  --chapa-2: #E7EDF4;
   --papel: #FFFFFF;
-  --tinta: #1B2420;
-  --acero: #6B7570;
-  --linea: #D5DAD6;
-  --petroleo: #1F5E57;
-  --petroleo-claro: #DCEBE7;
-  --senal: #F2B33D;
-  --senal-claro: #FCEFD3;
+  --tinta: #173056;
+  --acero: #617188;
+  --linea: #D5DFEA;
+  --petroleo: #176DA4;
+  --petroleo-claro: #E0F0F8;
+  --senal: #F7941D;
+  --senal-claro: #FFF2DD;
   --alerta: #B4532A;
 
   --r-s: 6px;
@@ -50,6 +50,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .marca-logo i:nth-child(2) { background: #F3F5F3; }
 .marca-logo i:nth-child(3) { background: #8FA39C; }
 .marca-nombre { font-weight: 700; font-stretch: 118%; font-size: 19px; letter-spacing: .01em; }
+.marca-nombre small { display: block; font-size: 9px; letter-spacing: .13em; color: #C7D9EF; line-height: 1; }
 .pestanas { display: flex; gap: 4px; }
 .pestana {
   background: none; border: 0; color: #B9C4BF; cursor: pointer;
@@ -453,3 +454,19 @@ a.boton-barra { text-decoration: none; }
   .pend-fila { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+/* En pantallas medianas la barra pasa a dos filas en vez de desbordar. */
+@media (max-width: 1550px) {
+  .barra { height: auto; min-height: 60px; flex-wrap: wrap; gap: 8px 20px; padding: 10px 16px; }
+  .pestanas { min-width: 0; max-width: 100%; overflow-x: auto; }
+  .barra-der { width: 100%; margin-left: 0; flex-wrap: wrap; }
+  .corrida { flex: 1 1 240px; min-width: 0; }
+  .corrida select { flex: 1; min-width: 0; max-width: 100%; }
+}
+@media (max-width: 700px) {
+  .barra { padding: 8px 12px; }
+  .marca-nombre { display: block; font-size: 16px; }
+  .pestanas { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; overflow: visible; }
+  .pestana { padding: 8px 4px; font-size: 12px; }
+  .corrida { flex-basis: 100%; }
+}

@@ -79,7 +79,8 @@ function catActual(r) {
   const cid = r.clasificacion?.categoria?.id;
   if (cid && E.catPorId.has(cid)) return cid;
   if (!r.clasificacion?.categoria) {
-    const s = LEGADO[r.clasificacion.segmento] || r.clasificacion.segmento;
+    const segmento = r.clasificacion?.segmento;
+    const s = LEGADO[segmento] || segmento;
     const c = E.catPorId.get(s);
     if (c && c.etapa === ETAPA_DE[r.punto]) return s;
   }
@@ -89,6 +90,12 @@ const catsDeEtapa = (etapa) => (E.cats?.categorias || []).filter((c) => c.etapa 
 
 // ---------------------------------------------------------------- datos
 async function detectarModo() {
+  if (window.JEVENTAS_DEMO) {
+    E.modo = "demo";
+    E.corridas = await pedir("datos/corridas.json");
+    setCats(await pedir("datos/categorias.json").catch(() => ({ etapas: {}, categorias: [], eliminadas: [] })));
+    return;
+  }
   try {
     E.corridas = await pedir("api/corridas");
     E.modo = "local";
@@ -676,6 +683,10 @@ async function clasificarLote() {
   est.textContent = real ? "Clasificando con Jev real…" : "Clasificando…";
   try {
     const r = await post("api/lote/agregar", { contactos, etiqueta: $("#loteNombre").value || (tipo === "historial" ? "historial" : "contactos"), jev_real: real, simular_plantillas: true, tipo });
+    if (!r.sugerencias && r.errores?.length) {
+      await recargarTodo(r.lote);
+      throw new Error(`No se pudo clasificar: ${r.errores[0]}`);
+    }
     $("#dlgLote").close();
     $("#loteContactos").innerHTML = "";
     await recargarTodo(r.lote);
@@ -695,10 +706,10 @@ function pintarAjustes() {
     <div class="ajustes-seccion"><label class="interruptor"><input type="checkbox" id="ajAprobado"${a.envio_externo_aprobado ? " checked" : ""}>
       <span><b>Don Box aprobó enviar conversaciones anonimizadas a proveedores externos</b><br><small style="color:var(--acero)">Sin esto, Jev real, los borradores con IA y el chat quedan apagados. Antes de enviar se borran teléfonos, emails, DNI y nombres.</small></span></label></div>
     <div class="ajustes-seccion"><h3>Jev (TypeSafe)</h3><p>Clasifica las conversaciones. ${a.typesafe.configurada ? `<span class="estado-ok">Clave cargada${a.typesafe.desde_entorno ? " (desde la variable de entorno)" : ""}.</span>` : `<span class="estado-no">Falta la clave.</span>`}</p>
-      <div class="prov"><span>Clave</span><input type="password" data-clave="typesafe" placeholder="${a.typesafe.configurada ? "Dejar vacío para no cambiarla" : "Pegá la clave de TypeSafe"}" autocomplete="off"></div></div>
+      <div class="prov"><span>Clave</span><input type="password" data-clave="typesafe" placeholder="${a.typesafe.configurada ? "Dejar vacío para no cambiarla" : "Pegá la clave de TypeSafe"}" autocomplete="new-password" data-lpignore="true" spellcheck="false"></div></div>
     <div class="ajustes-seccion"><h3>Modelos de IA</h3><p>Para el chat asistente y los borradores. Se usan API keys, que se pagan por uso (centavos). Las suscripciones como ChatGPT Plus o Claude Pro no se pueden conectar a apps propias.</p>
       ${provs.map(([k, p]) => `<div class="prov"><span>${esc(p.nombre)}<br><small class="${p.configurada ? "estado-ok" : "estado-no"}">${p.configurada ? "Clave cargada" : esc(p.ayuda)}</small></span>
-        <input type="password" data-clave="${k}" placeholder="${p.configurada ? "Dejar vacío para no cambiarla" : "API key"}" autocomplete="off">
+        <input type="password" data-clave="${k}" placeholder="${p.configurada ? "Dejar vacío para no cambiarla" : "API key"}" autocomplete="new-password" data-lpignore="true" spellcheck="false">
         <input type="text" data-modelo="${k}" value="${esc(p.modelo)}" aria-label="Modelo de ${esc(p.nombre)}"></div>`).join("")}
       <div class="fila-sel"><span>Chat asistente con</span><select id="ajChat">${opciones(a.proveedor_chat)}</select></div>
       <div class="fila-sel"><span>Borradores con</span><select id="ajBorr">${opciones(a.proveedor_borradores, [["offline", "Textos base (sin IA)"]])}</select></div>

@@ -93,9 +93,9 @@ def test_reclasificar_conserva_cambios_manuales(panel_tmp):
 
 
 def test_ajustes_no_devuelven_claves(panel_tmp):
-    ajustes.actualizar({"claves": {"openai": "sk-secreta"}, "proveedor_chat": "openai"})
+    ajustes.actualizar({"claves": {"openai": "sk-secreta-de-prueba-0123456789"}, "proveedor_chat": "openai"})
     pub = ajustes.publico()
-    assert "sk-secreta" not in json.dumps(pub)
+    assert "sk-secreta-de-prueba-0123456789" not in json.dumps(pub)
     assert pub["proveedores"]["openai"]["configurada"] and pub["proveedor_chat"] == "openai"
 
 
@@ -123,7 +123,7 @@ def test_asistente_ejecuta_herramientas_y_pide_confirmar_eliminar(panel_tmp, mon
 
 def test_proveedor_sin_aprobacion(panel_tmp):
     from jeventas import proveedores
-    ajustes.actualizar({"claves": {"deepseek": "k"}})
+    ajustes.actualizar({"claves": {"deepseek": "clave-de-prueba-0123456789"}})
     with pytest.raises(proveedores.ErrorProveedor, match="aprobó"):
         proveedores.crear("deepseek")
 
@@ -142,3 +142,10 @@ def test_compatible_arma_pedido_con_herramientas(panel_tmp, monkeypatch):
     assert r["texto"] == "Hay 0 lotes." and r["pasos"][0]["herramienta"] == "listar_lotes"
     assert "additionalProperties" not in json.dumps(pedidos[0]["tools"])
     assert pedidos[1]["messages"][-1] == {"role": "tool", "tool_call_id": "t1", "content": json.dumps({"lotes": []})}
+
+
+def test_ajustes_rechazan_clave_corta(panel_tmp):
+    """La contraseña del login autocompletada por el navegador no debe quedar como API key."""
+    with pytest.raises(ValueError):
+        ajustes.actualizar({"claves": {"typesafe": "DonBox"}})
+    assert not (ajustes._leer().get("claves") or {}).get("typesafe")
