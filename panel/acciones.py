@@ -236,6 +236,17 @@ def ver_categorias() -> dict:
     return d
 
 
+def ver_plantillas() -> dict:
+    """Devuelve el catálogo, el inventario del PDF y propuestas, sin secretos."""
+    data = leer_json(OUT.parent / "config" / "plantillas.json", {"plantillas": []})
+    return {
+        "plantillas": data.get("plantillas", []),
+        "inventario_documentado": data.get("inventario_documentado", []),
+        "propuestas_24h": data.get("propuestas_24h", []),
+        "max_plantillas_sin_respuesta": data.get("max_plantillas_sin_respuesta", 2),
+    }
+
+
 def crear_categoria(datos: dict) -> dict:
     try:
         return categorias().crear(datos)

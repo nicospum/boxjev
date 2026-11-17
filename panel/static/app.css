@@ -58,6 +58,22 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .pestana:hover { color: #fff; }
 .pestana.activa { background: rgba(255, 255, 255, .1); color: #fff; }
+.vista-plantillas { overflow-y: auto; padding: 28px; background: var(--chapa); }
+.plantillas { max-width: 1320px; margin: 0 auto; }
+.plantilla-regla { display: grid; gap: 4px; padding: 14px 18px; border: 1px solid #EBD9AE; background: var(--senal-claro); color: #6A4A0C; border-radius: var(--r-m); }
+.tpl-seccion { margin-top: 28px; }
+.tpl-seccion h2 { margin: 0 0 5px; font-size: 20px; }
+.tpl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 12px; }
+.tpl-card { display: grid; gap: 8px; padding: 16px; border: 1px solid var(--linea); border-left: 4px solid var(--petroleo); border-radius: var(--r-m); background: var(--papel); box-shadow: var(--sombra); }
+.tpl-card.propuesta { border-left-color: var(--senal); background: #FFFDF8; }
+.tpl-card.documentada { border-left-color: #8FA39C; }
+.tpl-card h3 { margin: 0; font-size: 16px; }
+.tpl-card p { margin: 0; white-space: pre-wrap; color: #36413C; }
+.tpl-card small { color: var(--acero); }
+.tpl-sup { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 12px; }
+.tpl-canal { color: var(--petroleo); font-weight: 650; }
+.tpl-trigger { font-size: 12.5px; color: var(--alerta) !important; font-weight: 600; }
+.estado-ok, .estado-no { font-size: 12px; font-weight: 650; }
 .barra-der { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 .boton-barra {
   background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .16); color: #fff;
@@ -207,6 +223,10 @@ main { flex: 1; min-width: 0; min-height: 0; display: flex; }
 .sugerencia { border-radius: var(--r-m); padding: 14px 16px; background: var(--petroleo-claro); }
 .sugerencia.plantilla { background: var(--papel); border: 1.5px dashed var(--petroleo); }
 .sugerencia.neutra { background: var(--chapa); }
+.sugerencia.propuesta { border-color: var(--senal); background: #FFFDF8; }
+.propuesta-mini { margin-top: 10px; padding-top: 10px; border-top: 1px solid #EBD9AE; }
+.propuesta-mini p { margin: 4px 0; white-space: pre-wrap; }
+.propuesta-mini small { color: var(--acero); }
 .sug-accion { font-size: 13px; font-weight: 650; color: var(--petroleo); }
 .sugerencia.neutra .sug-accion { color: var(--tinta); }
 .sug-texto { margin-top: 6px; white-space: pre-wrap; font-size: 14.5px; }

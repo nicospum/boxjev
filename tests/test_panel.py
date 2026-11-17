@@ -27,6 +27,16 @@ def test_agregar_lote_pegado_simulado_y_categorias(panel_tmp):
     assert any(r["clasificacion"]["categoria"]["id"] == "alta_intencion" for r in primeros)
 
 
+def test_catalogo_expone_plantillas_actuales_inventario_y_propuestas(panel_tmp):
+    _, acc = panel_tmp
+    catalogo = acc.ver_plantillas()
+    assert len(catalogo["plantillas"]) >= 7
+    assert len(catalogo["inventario_documentado"]) == 11
+    assert len(catalogo["propuestas_24h"]) >= 6
+    assert any(x["id"] == "pdf_hasta_pronto" for x in catalogo["inventario_documentado"])
+    assert any(x["id"] == "post24_retomar_sin_presion_v1" for x in catalogo["propuestas_24h"])
+
+
 def test_jev_real_pide_aprobacion_y_clave(panel_tmp):
     _, acc = panel_tmp
     with pytest.raises(acc.ErrorPanel, match="Ajustes"):

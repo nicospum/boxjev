@@ -109,6 +109,13 @@ def test_sin_simulacion_no_recomienda_plantillas_no_aprobadas():
     assert rec["plantilla"] is None and rec["revision_humana"]
 
 
+def test_sin_aprobacion_propone_textos_post_24h_para_revision():
+    cat = CatalogoPlantillas(RAIZ / "config/plantillas.json", simular=False)
+    rec = cat.recomendar("nunca_respondio", "mudanza", 0, T0)
+    assert rec["plantilla"] is None and rec["revision_humana"]
+    assert rec["propuestas"] and rec["propuestas"][0]["id"] == "post24_retomar_sin_presion_v1"
+
+
 def test_no_recomienda_plantilla_vencida(tmp_path):
     p = tmp_path / "p.json"
     p.write_text('{"plantillas": [{"id": "x", "nombre_meta": "x", "estado": "aprobada", "vigente_desde": "2025-01-01", '

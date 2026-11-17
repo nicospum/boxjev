@@ -36,6 +36,7 @@ const SIN = { id: "sin_categoria", nombre: "Sin categoría", descripcion: "Jev n
 // ---------------------------------------------------------------- estado
 const E = {
   modo: "local", corridas: [], corrida: null, datos: null, cats: null, catPorId: new Map(), ajustes: null,
+  plantillas: null,
   porId: new Map(), recsPorId: new Map(), lista: [], filtro: null, texto: "", soloPendientes: false,
   idSel: null, claveSel: null, verTodas: false, vista: "consultas", abiertas: new Set(), chat: [],
 };
@@ -102,6 +103,7 @@ async function detectarModo() {
     setCats(await pedir("api/categorias"));
     E.ajustes = await pedir("api/ajustes");
     E.historial = await pedir("api/historial");
+    E.plantillas = await pedir("api/plantillas");
     $("#btnSalir").hidden = !(await pedir("api/sesion")).login;
   } catch {
     E.modo = "demo";
@@ -328,6 +330,8 @@ function pintarLectura() {
     const p = ac.plantilla;
     sug = `<div class="sugerencia plantilla"><div class="sug-accion">${ACCION[ac.tipo]}: ${esc(p.nombre_meta)}</div><div class="sug-texto">${esc(p.texto)}</div>
       <div class="sug-pie"><span>${esc(ac.motivo || "")}</span>${ac.simulada ? `<span class="etiqueta-mini">Ejemplo, no aprobada</span>` : ""}</div></div>`;
+  } else if (ac.propuestas?.length) {
+    sug = `<div class="sugerencia plantilla propuesta"><div class="sug-accion">No hay plantilla aprobada: propuestas para revisión humana</div>${ac.propuestas.map((p) => `<div class="propuesta-mini"><b>${esc(p.nombre)}</b><p>${esc(p.texto)}</p><small>${esc(p.motivo || "")}</small></div>`).join("")}<div class="sug-pie"><span>${esc(ac.motivo || "")}</span></div></div>`;
   } else {
     sug = `<div class="sugerencia neutra"><div class="sug-accion">${esc(ACCION[ac.tipo] || ac.tipo)}</div><div class="sug-texto">${esc(ac.detalle || ac.motivo || "")}</div></div>`;
   }
@@ -791,7 +795,7 @@ function toggleChat(abrir) {
 // ---------------------------------------------------------------- vistas y eventos
 function mostrarVista(v) {
   E.vista = v;
-  for (const n of ["consultas", "categorias", "resumen", "importar"]) $(`#vista-${n}`).hidden = n !== v;
+  for (const n of ["consultas", "categorias", "resumen", "plantillas", "importar"]) $(`#vista-${n}`).hidden = n !== v;
   document.querySelectorAll(".pestana").forEach((b) => b.classList.toggle("activa", b.dataset.vista === v));
   repintarVista();
 }
@@ -799,6 +803,20 @@ function repintarVista() {
   if (!E.datos) return;
   if (E.vista === "resumen") pintarResumen();
   if (E.vista === "categorias") pintarCategorias();
+  if (E.vista === "plantillas") pintarPlantillas();
+}
+
+function pintarPlantillas() {
+  const V = $("#vista-plantillas");
+  const d = E.plantillas || { plantillas: [], inventario_documentado: [], propuestas_24h: [] };
+  const estado = (p) => p.estado === "aprobada" ? `<span class="estado-ok">Aprobada</span>` : `<span class="estado-no">${esc(p.estado || "Documentada")}</span>`;
+  const catalogo = d.plantillas.map((p) => `<article class="tpl-card"><div class="tpl-sup"><span class="tpl-canal">WhatsApp · ${esc(p.nombre_meta)}</span>${estado(p)}</div><h3>${esc(p.id)}</h3><p>${esc(p.texto)}</p><small>Uso: ${esc((p.uso_previsto?.segmentos || []).join(", "))} · seguimiento ${(p.uso_previsto?.seguimiento_numero || []).join(", ")}</small></article>`).join("");
+  const nuevas = d.propuestas_24h.map((p) => `<article class="tpl-card propuesta"><div class="tpl-sup"><span class="tpl-canal">Propuesta post 24 h</span><span class="estado-no">No aprobada</span></div><h3>${esc(p.nombre)}</h3><p>${esc(p.texto)}</p><small>${esc(p.motivo)}</small></article>`).join("");
+  const inventario = d.inventario_documentado.map((p) => `<article class="tpl-card documentada"><div class="tpl-sup"><span class="tpl-canal">${esc(p.canal)} · ${esc(p.etapa)}</span><span class="estado-no">Inventario PDF</span></div><h3>${esc(p.nombre)}</h3><p class="tpl-trigger">Disparador: ${esc(p.disparador)}</p><p>${esc(p.texto)}</p><small>${esc(p.notas || "")}</small></article>`).join("");
+  V.innerHTML = `<div class="plantillas"><div class="cats-cab"><div><h1>Plantillas y seguimientos</h1><p class="bajada">Separamos las plantillas listas para configurar en WhatsApp, las propuestas para después de 24 h y el inventario de piezas del PDF. Una propuesta nunca se envía sola: primero debe aprobarla Ventas.</p></div><div class="plantilla-regla"><b>Regla de seguridad</b><span>Máximo ${d.max_plantillas_sin_respuesta} seguimientos sin respuesta</span></div></div>
+    <section class="tpl-seccion"><h2>Propuestas nuevas para 24 h sin respuesta</h2><p class="nota">Jev puede sugerir una según la nueva conversación, la categoría post 24 h y la cantidad de intentos. El silencio no se interpreta automáticamente como desinterés.</p><div class="tpl-grid">${nuevas}</div></section>
+    <section class="tpl-seccion"><h2>Catálogo actual de WhatsApp</h2><p class="nota">Sólo las aprobadas y vigentes pueden recomendarse en producción. Las de ejemplo se usan únicamente en laboratorio.</p><div class="tpl-grid">${catalogo}</div></section>
+    <section class="tpl-seccion"><h2>Inventario documentado del PDF</h2><p class="nota">Estas piezas son principalmente emails de lead nurturing y reserva. Se cargaron como referencia, no como plantillas automáticas de WhatsApp.</p><div class="tpl-grid">${inventario}</div></section></div>`;
 }
 function moverSeleccion(delta) {
   const i = E.lista.findIndex((x) => x.id === E.idSel);

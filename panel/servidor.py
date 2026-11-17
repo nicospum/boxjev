@@ -168,6 +168,7 @@ GET = {
     "/api/corridas": lambda q: acciones.listar_lotes(),
     "/api/corrida": lambda q: cargar_lote(q.get("nombre", "")),
     "/api/categorias": lambda q: acciones.ver_categorias(),
+    "/api/plantillas": lambda q: acciones.ver_plantillas(),
     "/api/ajustes": lambda q: ajustes.publico(),
     "/api/historial": lambda q: acciones.historial(),
 }

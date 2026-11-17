@@ -24,6 +24,7 @@ class CatalogoPlantillas:
     def __init__(self, ruta: str | Path, simular: bool = False) -> None:
         data = json.loads(Path(ruta).read_text(encoding="utf-8"))
         self.plantillas = data["plantillas"]
+        self.propuestas_24h = data.get("propuestas_24h", [])
         self.max_sin_respuesta = int(data.get("max_plantillas_sin_respuesta", 2))
         self.simular = simular
 
@@ -70,7 +71,16 @@ class CatalogoPlantillas:
         if not candidatas:
             motivo = ("Ninguna de las plantillas elegidas para esta categoría está aprobada y vigente." if ids
                       else "Ninguna plantilla aprobada y vigente encaja con este caso.")
-            return {"plantilla": None, "motivo": motivo, "revision_humana": True, "descartadas": descartes}
+            propuestas = []
+            for p in self.propuestas_24h:
+                if numero not in p.get("seguimiento_numero", [1, 2]):
+                    continue
+                seg_ok = "*" in p.get("segmentos", []) or segmento in p.get("segmentos", [])
+                nec_ok = "*" in p.get("necesidades", []) or necesidad in p.get("necesidades", [])
+                if seg_ok and nec_ok:
+                    propuestas.append({"id": p["id"], "nombre": p["nombre"], "texto": p["texto"], "motivo": p.get("motivo", "")})
+            return {"plantilla": None, "motivo": motivo, "revision_humana": True, "descartadas": descartes,
+                    "propuestas": propuestas[:3]}
 
         candidatas.sort(key=lambda x: -x[0])
         elegida = candidatas[0][1]
