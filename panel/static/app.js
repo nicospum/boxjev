@@ -95,6 +95,7 @@ async function detectarModo() {
     E.modo = "demo";
     E.corridas = await pedir("datos/corridas.json");
     setCats(await pedir("datos/categorias.json").catch(() => ({ etapas: {}, categorias: [], eliminadas: [] })));
+    E.plantillas = await pedir("datos/plantillas.json").catch(() => ({ plantillas: [], inventario_documentado: [], propuestas_24h: [] }));
     return;
   }
   try {
@@ -109,6 +110,7 @@ async function detectarModo() {
     E.modo = "demo";
     E.corridas = await pedir("datos/corridas.json");
     setCats(await pedir("datos/categorias.json").catch(() => ({ etapas: {}, categorias: [], eliminadas: [] })));
+    E.plantillas = await pedir("datos/plantillas.json").catch(() => ({ plantillas: [], inventario_documentado: [], propuestas_24h: [] }));
   }
 }
 const claveDemo = () => `jeventas.revisiones.${E.corrida}`;

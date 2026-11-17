@@ -1,0 +1,97 @@
+{
+  "_descripcion": "Catálogo de plantillas de WhatsApp. Las de este archivo son EJEMPLOS para armar el piloto: ninguna está aprobada. Reemplazar por el listado real (nombre en Meta, texto, estado y vigencia). El sistema solo recomienda plantillas con estado 'aprobada' y vigentes, salvo que se corra con --simular-plantillas (modo laboratorio, marcado en la salida).",
+  "max_plantillas_sin_respuesta": 2,
+  "plantillas": [
+    {
+      "id": "seguimiento_cotizacion_v1",
+      "nombre_meta": "seguimiento_cotizacion",
+      "estado": "ejemplo",
+      "vigente_desde": "2026-01-01",
+      "vigente_hasta": null,
+      "texto": "Hola {{1}}, te escribimos de Don Box por tu consulta de baulera en {{2}}. Si querés, con lo que vas a guardar y desde cuándo lo necesitás te preparamos la cotización. ¿Seguimos?",
+      "variables": ["nombre o 'qué tal'", "sede o zona"],
+      "uso_previsto": {"segmentos": ["alta_intencion", "lista_para_cotizar"], "necesidades": ["*"], "seguimiento_numero": [1]}
+    },
+    {
+      "id": "seguimiento_mudanza_v1",
+      "nombre_meta": "seguimiento_mudanza",
+      "estado": "ejemplo",
+      "vigente_desde": "2026-01-01",
+      "vigente_hasta": null,
+      "texto": "Hola {{1}}, ¿cómo va la mudanza? Si todavía necesitás guardar cosas, en Don Box te ayudamos a calcular el tamaño de baulera. Respondé este mensaje y lo vemos.",
+      "variables": ["nombre o 'qué tal'"],
+      "uso_previsto": {"segmentos": ["alta_intencion", "lista_para_cotizar", "exploratoria"], "necesidades": ["mudanza", "reforma"], "seguimiento_numero": [1, 2]}
+    },
+    {
+      "id": "seguimiento_empresa_v1",
+      "nombre_meta": "seguimiento_empresas",
+      "estado": "ejemplo",
+      "vigente_desde": "2026-01-01",
+      "vigente_hasta": null,
+      "texto": "Hola {{1}}, te escribimos de Don Box por tu consulta para guardar mercadería o equipos. Si nos contás volumen aproximado y frecuencia de retiro, te proponemos opciones. ¿Te sirve?",
+      "variables": ["nombre o 'qué tal'"],
+      "uso_previsto": {"segmentos": ["alta_intencion", "lista_para_cotizar", "exploratoria"], "necesidades": ["stock_empresa"], "seguimiento_numero": [1, 2]}
+    },
+    {
+      "id": "pedido_datos_v1",
+      "nombre_meta": "consulta_datos_baulera",
+      "estado": "ejemplo",
+      "vigente_desde": "2026-01-01",
+      "vigente_hasta": null,
+      "texto": "Hola {{1}}, gracias por escribir a Don Box. Para ayudarte con la baulera, ¿en qué zona la buscás y qué te gustaría guardar?",
+      "variables": ["nombre o 'qué tal'"],
+      "uso_previsto": {"segmentos": ["informacion_insuficiente", "exploratoria"], "necesidades": ["*"], "seguimiento_numero": [1]}
+    },
+    {
+      "id": "reenganche_suave_v1",
+      "nombre_meta": "reenganche_suave",
+      "estado": "ejemplo",
+      "vigente_desde": "2026-01-01",
+      "vigente_hasta": null,
+      "texto": "Hola {{1}}, quedamos a disposición por tu consulta de baulera. Si más adelante lo necesitás, respondé este mensaje y te ayudamos.",
+      "variables": ["nombre o 'qué tal'"],
+      "uso_previsto": {"segmentos": ["*"], "necesidades": ["*"], "seguimiento_numero": [2]}
+    },
+    {
+      "id": "retomar_mas_adelante_v1",
+      "nombre_meta": "retomar_consulta",
+      "estado": "ejemplo",
+      "vigente_desde": "2026-01-01",
+      "vigente_hasta": null,
+      "texto": "Hola {{1}}, nos habías pedido que te escribiéramos más adelante por la baulera. ¿Querés que retomemos la consulta?",
+      "variables": ["nombre o 'qué tal'"],
+      "uso_previsto": {"segmentos": ["pidio_tiempo"], "necesidades": ["*"], "seguimiento_numero": [1, 2]}
+    },
+    {
+      "id": "promo_vieja_2025",
+      "nombre_meta": "promo_invierno_2025",
+      "estado": "aprobada",
+      "vigente_desde": "2025-05-01",
+      "vigente_hasta": "2025-08-31",
+      "texto": "Plantilla vencida, se deja para probar que el sistema no recomienda plantillas fuera de vigencia.",
+      "variables": [],
+      "uso_previsto": {"segmentos": ["*"], "necesidades": ["*"], "seguimiento_numero": [1, 2]}
+    }
+  ],
+  "inventario_documentado": [
+    {"id":"pdf_recibimos_tu_mensaje","nombre":"Recibimos tu mensaje","canal":"email","etapa":"Asignación","disparador":"5 minutos después del formulario","texto":"Hola [nombre], recibimos tu mensaje y estamos tratando de contactarte. Podés adelantarte llamando al 1159842874 o escribiéndonos por WhatsApp. Mientras tanto te enviamos información útil.","notas":"Incluye botones WhatsApp y Conocé nuestros servicios."},
+    {"id":"pdf_tipos_de_bauleras","nombre":"Nuestros tipos de bauleras","canal":"email","etapa":"Lead nurturing","disparador":"2 días sin contacto inicial","texto":"Hola [nombre], te compartimos los distintos tipos de bauleras para que veas cuál se adapta mejor a tu necesidad: chica 3 m³, chica plus 7,5 m³, media 5,25 m³, estándar 10 m³, doble estándar 20 m³ y gigante 15 m³.","notas":"La grilla de capacidades debe revisarse: la baulera gigante aparece después de la doble estándar."},
+    {"id":"pdf_beneficio","nombre":"Beneficio","canal":"email","etapa":"Lead nurturing","disparador":"3 días después del envío anterior","texto":"Hola [nombre], ¿ya conocés nuestras promociones? Contactate con un asesor y te ayudamos a elegir el espacio justo para vos.","notas":"Pieza gráfica: Te ayudamos a elegir el espacio de guardado justo para vos."},
+    {"id":"pdf_hasta_pronto","nombre":"Hasta pronto","canal":"email","etapa":"Lead nurturing","disparador":"3 días después; cierre de secuencia","texto":"Hola [nombre], no hemos podido comunicarnos con vos, pero nos mantenemos cerca para darte la información que necesites sin compromiso. Seguinos en redes y enterate de nuestras novedades. ¡Hasta pronto!","notas":"No insistir después sin una nueva señal del prospecto."},
+    {"id":"pdf_ingreso_15_dias","nombre":"Ingreso en 15 días","canal":"email","etapa":"Reserva","disparador":"15 días antes del ingreso","texto":"¡[nombre], tu ingreso es en 15 días! Nuestro equipo de sucursal se está preparando para recibirte. Te enviaremos la información que necesitás y algunos tips. ¿Necesitás cambiar o cancelar tu reserva?","notas":"Recordatorio transaccional; no es plantilla de reactivación."},
+    {"id":"pdf_ingreso_5_dias","nombre":"Ingreso en 5 días","canal":"email","etapa":"Reserva","disparador":"5 días antes del ingreso","texto":"¡[nombre], tu ingreso es en cinco días! Recordá llevar tu DNI o pasaporte vigente, coordinar con tu flete y llegar antes del cierre de la sucursal.","notas":"El PDF dice “nos vemos mañana”, inconsistente con el disparador de 5 días. También corregir “artículos preparados” y voseo."},
+    {"id":"pdf_ingreso_1_dia","nombre":"Ingreso mañana","canal":"email","etapa":"Reserva","disparador":"1 día antes del ingreso","texto":"¡[nombre], tu ingreso es mañana! Recordá llevar tu DNI o pasaporte vigente, coordinar con tu flete y llegar antes del cierre de la sucursal. ¿Necesitás cambiar o cancelar tu reserva?","notas":"Corregir “artículos preparados”, “intentá” y “evitá” para mantener el voseo."},
+    {"id":"pdf_modificacion_reserva","nombre":"Modificación de reserva","canal":"email","etapa":"No ingreso","disparador":"Cuando se registra una nueva fecha","texto":"¡Actualizamos tu reserva de Don Box! Hola [nombre], actualizamos tu reserva en [sucursal] para el [fecha]. Antes de tu ingreso te enviaremos la información necesaria. Si necesitás comunicarte, escribinos por WhatsApp.","notas":"Validar la nueva fecha con la sucursal."},
+    {"id":"pdf_reserva_cancelada_no_ingreso","nombre":"Reserva cancelada por no ingreso","canal":"email","etapa":"No ingresa","disparador":"Al cerrar el negocio como perdido por no ingreso","texto":"¡[nombre], tu reserva ha sido cancelada! Te enviamos recordatorios y no recibimos respuesta, por eso liberamos el espacio. Si todavía necesitás una baulera, podés reservar nuevamente. Si ya no la necesitás, nos ayudaría conocer el motivo.","notas":"Pieza de referencia de buen tono: explica, ofrece salida y pide feedback."},
+    {"id":"pdf_modificacion_reserva_reprogramada","nombre":"Reserva reprogramada","canal":"email","etapa":"Reserva reprogramada","disparador":"Cuando se registra una nueva fecha antes del ingreso","texto":"¡Actualizamos tu reserva de Don Box! Hola [nombre], actualizamos tu reserva en [sucursal] para el [fecha]. Validá la información con la sucursal y escribinos si necesitás ayuda.","notas":"Revisar si es duplicada de modificación de reserva y unificar."},
+    {"id":"pdf_bienvenida_cliente","nombre":"Bienvenida a Don Box","canal":"email","etapa":"Ingresa","disparador":"5 minutos después de confirmar el ingreso","texto":"¡Gracias por ser parte de Don Box! Te damos la bienvenida. Tus pertenencias están guardadas de manera segura. Acá tenés el manual de usuario y nuestros canales de contacto.","notas":"Incluye manual, teléfono 1159842874 y WhatsApp 1130325000."}
+  ],
+  "propuestas_24h": [
+    {"id":"post24_retomar_sin_presion_v1","nombre":"Retomar sin presión","texto":"Hola {{1}}, retomo tu consulta por la baulera. A veces se complica responder en el momento; si todavía te sirve, contame zona y qué necesitás guardar y lo vemos. Si no, no hay problema.","segmentos":["nunca_respondio","se_enfrio"],"necesidades":["*"],"seguimiento_numero":[1],"motivo":"Reconoce que el silencio no significa desinterés."},
+    {"id":"post24_opciones_concretas_v1","nombre":"Opciones concretas","texto":"Hola {{1}}, para orientarte rápido: ¿buscás espacio por mudanza, reforma, viaje o para guardar mercadería? Con eso te recomiendo una opción sin compromiso.","segmentos":["informacion_insuficiente","nunca_respondio"],"necesidades":["*"],"seguimiento_numero":[1],"motivo":"Reduce el esfuerzo de responder a una elección simple."},
+    {"id":"post24_cotizacion_abierta_v1","nombre":"Cotización abierta","texto":"Hola {{1}}, quedó pendiente tu consulta de baulera en {{2}}. Si querés, retomamos desde donde quedamos y revisamos disponibilidad y precio actualizado.","segmentos":["se_enfrio"],"necesidades":["*"],"seguimiento_numero":[1,2],"motivo":"Útil cuando ya hubo datos o cotización."},
+    {"id":"post24_tiempo_v1","nombre":"Cuando sea el momento","texto":"Hola {{1}}, te escribo una sola vez para dejarte la consulta abierta. Si ahora no es el momento, podés volver cuando quieras y retomamos la búsqueda de baulera.","segmentos":["pidio_tiempo"],"necesidades":["*"],"seguimiento_numero":[1],"motivo":"Respeta a quien pidió tiempo sin presionarlo."},
+    {"id":"post24_empresa_v1","nombre":"Seguimiento empresa","texto":"Hola {{1}}, ¿seguís evaluando un espacio para stock o equipos? Si me indicás volumen aproximado y frecuencia de retiro, te paso alternativas para comparar.","segmentos":["se_enfrio","nunca_respondio"],"necesidades":["stock_empresa"],"seguimiento_numero":[1],"motivo":"Pide sólo la información que destraba un caso empresa."},
+    {"id":"post24_ultimo_contacto_v1","nombre":"Cierre amable","texto":"Hola {{1}}, cierro por ahora esta conversación para no molestarte. Si más adelante necesitás espacio, respondé este mensaje y te ayudamos con la baulera.","segmentos":["se_enfrio","nunca_respondio"],"necesidades":["*"],"seguimiento_numero":[2],"motivo":"Último intento; evita una secuencia insistente."}
+  ]
+}
