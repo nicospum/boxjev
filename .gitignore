@@ -7,3 +7,4 @@ export/
 config/*.local.json
 config/*.tmp
 .netlify/
+.vercel
