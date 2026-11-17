@@ -96,6 +96,7 @@ async function detectarModo() {
     E.corridas = await pedir("datos/corridas.json");
     setCats(await pedir("datos/categorias.json").catch(() => ({ etapas: {}, categorias: [], eliminadas: [] })));
     E.plantillas = await pedir("datos/plantillas.json").catch(() => ({ plantillas: [], inventario_documentado: [], propuestas_24h: [] }));
+    E.plantillas.inventario_documentado = await pedir("datos/inventario_pdf.json").catch(() => E.plantillas.inventario_documentado || []);
     return;
   }
   try {
@@ -111,6 +112,7 @@ async function detectarModo() {
     E.corridas = await pedir("datos/corridas.json");
     setCats(await pedir("datos/categorias.json").catch(() => ({ etapas: {}, categorias: [], eliminadas: [] })));
     E.plantillas = await pedir("datos/plantillas.json").catch(() => ({ plantillas: [], inventario_documentado: [], propuestas_24h: [] }));
+    E.plantillas.inventario_documentado = await pedir("datos/inventario_pdf.json").catch(() => E.plantillas.inventario_documentado || []);
   }
 }
 const claveDemo = () => `jeventas.revisiones.${E.corrida}`;
@@ -814,7 +816,7 @@ function pintarPlantillas() {
   const estado = (p) => p.estado === "aprobada" ? `<span class="estado-ok">Aprobada</span>` : `<span class="estado-no">${esc(p.estado || "Documentada")}</span>`;
   const catalogo = d.plantillas.map((p) => `<article class="tpl-card"><div class="tpl-sup"><span class="tpl-canal">WhatsApp · ${esc(p.nombre_meta)}</span>${estado(p)}</div><h3>${esc(p.id)}</h3><p>${esc(p.texto)}</p><small>Uso: ${esc((p.uso_previsto?.segmentos || []).join(", "))} · seguimiento ${(p.uso_previsto?.seguimiento_numero || []).join(", ")}</small></article>`).join("");
   const nuevas = d.propuestas_24h.map((p) => `<article class="tpl-card propuesta"><div class="tpl-sup"><span class="tpl-canal">Propuesta post 24 h</span><span class="estado-no">No aprobada</span></div><h3>${esc(p.nombre)}</h3><p>${esc(p.texto)}</p><small>${esc(p.motivo)}</small></article>`).join("");
-  const inventario = d.inventario_documentado.map((p) => `<article class="tpl-card documentada"><div class="tpl-sup"><span class="tpl-canal">${esc(p.canal)} · ${esc(p.etapa)}</span><span class="estado-no">Inventario PDF</span></div><h3>${esc(p.nombre)}</h3><p class="tpl-trigger">Disparador: ${esc(p.disparador)}</p><p>${esc(p.texto)}</p><small>${esc(p.notas || "")}</small></article>`).join("");
+  const inventario = d.inventario_documentado.map((p) => `<article class="tpl-card documentada"><div class="tpl-sup"><span class="tpl-canal">Email · ${esc(p.etapa)}</span><span class="estado-no">Inventario PDF</span></div><h3>${esc(p.nombre)}</h3><p class="tpl-trigger">Disparador: ${esc(p.disparador)}</p><p>${esc(p.asunto || "")}</p><small>${esc(p.cuando || "")}</small><button class="boton chico" data-preview="${esc(p.id)}">Ver cómo se envía</button></article>`).join("");
   V.innerHTML = `<div class="plantillas"><div class="cats-cab"><div><h1>Plantillas y seguimientos</h1><p class="bajada">Separamos las plantillas listas para configurar en WhatsApp, las propuestas para después de 24 h y el inventario de piezas del PDF. Una propuesta nunca se envía sola: primero debe aprobarla Ventas.</p></div><div class="plantilla-regla"><b>Regla de seguridad</b><span>Máximo ${d.max_plantillas_sin_respuesta} seguimientos sin respuesta</span></div></div>
     <section class="tpl-seccion"><h2>Propuestas nuevas para 24 h sin respuesta</h2><p class="nota">Jev puede sugerir una según la nueva conversación, la categoría post 24 h y la cantidad de intentos. El silencio no se interpreta automáticamente como desinterés.</p><div class="tpl-grid">${nuevas}</div></section>
     <section class="tpl-seccion"><h2>Catálogo actual de WhatsApp</h2><p class="nota">Sólo las aprobadas y vigentes pueden recomendarse en producción. Las de ejemplo se usan únicamente en laboratorio.</p><div class="tpl-grid">${catalogo}</div></section>
@@ -862,6 +864,15 @@ function eventos() {
     if (e.target.id === "selCat") moverCategoria(E.claveSel, e.target.value);
   });
   $("#vista-resumen").addEventListener("click", (e) => { if (e.target.id === "btnCsvDemo") descargarCsvDemo(); });
+  $("#vista-plantillas").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-preview]");
+    if (!b) return;
+    const p = (E.plantillas?.inventario_documentado || []).find((x) => x.id === b.dataset.preview);
+    if (!p) return;
+    $("#plantillaVista").innerHTML = `<div class="email-preview-head"><span>Vista previa del envío</span><button class="boton-icono" data-cerrar-preview aria-label="Cerrar">×</button></div><div class="email-preview-meta"><b>Asunto:</b> ${esc(p.asunto || "Sin asunto")}<br><b>Etapa:</b> ${esc(p.etapa)} · <b>Rama:</b> ${esc(p.rama)}<br><b>Se dispara por:</b> ${esc(p.disparador)}<br><b>Cuándo:</b> ${esc(p.cuando)}<br><b>Origen:</b> ${esc(p.origen)}</div><div class="email-preview-body"><div class="email-logo">DON BOX</div>${p.contenido.map((x) => `<p>${esc(x)}</p>`).join("")}${p.botones?.length ? `<div class="email-buttons">${p.botones.map((x) => `<span>${esc(x)}</span>`).join("")}</div>` : ""}</div><div class="email-preview-footer">${esc(p.pie || "")}</div>${p.observaciones?.length ? `<div class="email-notes"><b>A revisar</b><ul>${p.observaciones.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}`;
+    $("#dlgPlantilla").showModal();
+  });
+  $("#plantillaVista").addEventListener("click", (e) => { if (e.target.matches("[data-cerrar-preview]")) $("#dlgPlantilla").close(); });
 
   // categorías
   $("#vista-categorias").addEventListener("click", async (e) => {

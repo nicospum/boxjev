@@ -74,6 +74,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tpl-canal { color: var(--petroleo); font-weight: 650; }
 .tpl-trigger { font-size: 12.5px; color: var(--alerta) !important; font-weight: 600; }
 .estado-ok, .estado-no { font-size: 12px; font-weight: 650; }
+.plantilla-dialogo { width: min(760px, calc(100vw - 32px)); padding: 0; border: 0; border-radius: var(--r-m); box-shadow: 0 20px 70px rgba(23,48,86,.28); }
+.plantilla-dialogo::backdrop { background: rgba(23,48,86,.42); }
+.email-preview-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: var(--tinta); color: white; font-weight: 650; }
+.email-preview-meta { padding: 16px 20px; background: var(--chapa); border-bottom: 1px solid var(--linea); line-height: 1.8; color: var(--acero); font-size: 13px; }
+.email-preview-body { padding: 28px 34px; background: white; min-height: 320px; }
+.email-logo { color: var(--petroleo); font-weight: 800; letter-spacing: .12em; font-size: 19px; margin-bottom: 26px; }
+.email-preview-body p { max-width: 620px; margin: 0 auto 14px; color: #36413C; white-space: pre-wrap; }
+.email-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 24px; }
+.email-buttons span { padding: 10px 16px; border-radius: 4px; background: var(--petroleo); color: white; font-weight: 650; }
+.email-preview-footer { padding: 18px 24px; background: var(--chapa); color: var(--acero); text-align: center; font-size: 12px; }
+.email-notes { padding: 16px 22px; background: var(--senal-claro); color: #6A4A0C; font-size: 13px; }
+.email-notes ul { margin-bottom: 0; }
 .barra-der { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 .boton-barra {
   background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .16); color: #fff;
